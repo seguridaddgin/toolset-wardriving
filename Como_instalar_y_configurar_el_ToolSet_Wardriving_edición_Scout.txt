@@ -1,4 +1,4 @@
-===========================0==================================
+==============================================================
 Como instalar y configurar el SetTool Wardrining edición Scout
 ==============================================================
 
@@ -131,6 +131,9 @@ Configurar el sistema operativo raspbian para comandar la captura de kismet
 Agregar un usuario comenzar para iniciar la captura de paquetes con kismet
 --------------------------------------------------------------------------
 # adduser comenzar
+o
+# useradd -m -s /bin/bash comenzar
+# echo 'comenzar:MiClaveSegura' | sudo chpasswd
 
 Agregar el usuario comenzar al grupo sudo
 -----------------------------------------
@@ -199,9 +202,14 @@ then
 else
     echo "Kismet no se encuentra en ejecución"
 fi
-echo "Presione una tecla para salir ..."
-read -n 1 -s -r
-exit
+echo "\n"
+if pidof gpsd > /dev/null
+then
+    echo "gpsd está en ejecución"
+else
+    echo "gpsd no se encuentra en ejecución"
+fi
+echo "\n"
 
 Agregar un usuario de nombre apagar para bajar el sistema raspbian
 ------------------------------------------------------------------
@@ -217,6 +225,10 @@ Modificar el archivo .bashrc para ejecutar el comando que apaga el sistema raspb
 
 Agregar el comando en el archivo .bashrc
 ----------------------------------------
+if pidof kismet > /dev/null
+then
+    sudo pkill kismet
+fi
 sudo shutdown now
 
 Crear el archivo rc.local
@@ -229,7 +241,7 @@ Editar el archivo rc.local, para agregar iniciar automaticamente la captura de r
 # rc.local
 
 # Registro de inicio de rc.local
-echo "Arrancando rc.local ..." > /var/log/rc.local.log
+echo "$(date +'%d-%m-%Y_%H-%M-%S') - Arrancando rc.local ..." > /var/log/rc.local.log
 
 # Iniciar kismet para relevar redes inalámbricas
 kismet --log-debug 2>&1 -t "Kismet_$(date +'%d-%m-%Y_%H-%M-%S')_%i" &
@@ -242,7 +254,7 @@ Aplicar permiso de ejecución al script rc.local
 
 Crear el archivo de unidad para el servicio systemd
 ---------------------------------------------------
-# nano /etc/systemd/system/rc-local.service
+# nano s
 
 Modificar el archivo de unidad para rc.local
 --------------------------------------------
