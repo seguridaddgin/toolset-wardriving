@@ -2,10 +2,54 @@
 Como instalar y configurar el SetTool Wardrining edición Scout
 ==============================================================
 
-Este documento describe la instalación y configuración del SetTool Wardriving edición Scout (STWeS), utilizando como sistema operativo raspbian más aplicaciones como gpsd y kismet.
+Este documento describe la instalación y configuración del SetTool Wardriving edición Scout (STS), utilizando como sistema operativo raspbian más aplicaciones como gpsd y kismet.
 
 Instalación y configuración de raspbian en la raspberry pi zero 2
 =================================================================
+
+Descargar la imagen del sistema operativo Raspberry Pi OS
+---------------------------------------------------------
+Acceder a la siguiente URL: https://www.raspberrypi.com/software/operating-systems/
+
+Descargar e instalar el Raspberry Pi Imager
+-------------------------------------------
+Acceder a la siguiente URL: https://www.raspberrypi.com/software/
+
+Cargar la imagen de Raspberry Pi OS en la tarjeta microSD
+---------------------------------------------------------
+Iniciar el programa Imager de Raspberry para cargar la imagen del sistema operativo.
+
+Iniciar Raspeberry Pi OS desde la Raspberry Pi Zero 2
+-----------------------------------------------------
+Se recomienda iniciar la Raspberry Pi con todo el hardware conectado (miscroSD, placa de red Wi-Fi USB).
+
+Configurar el teclado
+---------------------
+Al iniciar por primera vez el sistema Raspberry Pi OS, se solicita configurar el teclado, se recomienda seleccionar Spanish Latin American, pero depende del teclado conectado
+
+Configurar un usuario en el sistema operativo
+---------------------------------------------
+En el primer arranque del sistema, también se pide configurar un usuario normal en el sistema operativo, se recomienda indicar el nombre de usuario tss. Más tarde, se solicitará configurar la clave del usuario creado.
+
+Ingresar al sistema operativo con el usuario creado
+---------------------------------------------------
+Utilizar las credenciales de acceso indicadas en lineas anteriores, usuario tss y la clave establecida.
+
+Pasar a usuario administrador (root)
+------------------------------------
+$ sudo su
+
+Ejecutar la utilidad de configuración oficial de Raspberry Pi OS
+----------------------------------------------------------------
+# raspi-config
+
+Dentro de la utilidad de configuración (raspi-config), configurar el país, localización, activar SSH y configurar Wi-Fi
+-----------------------------------------------------------------------------------------------------------------------
+Cada configuración se puede encontrar en las opciones de menú de la utilidad raspi-config
+
+Salir de raspi-config y reiniciar el sistema operativo
+------------------------------------------------------
+# reboot
 
 Actualizar la lista de paquetes en raspbian
 -------------------------------------------
@@ -19,9 +63,9 @@ Actualizar los paquetes en el sistema raspbian
 ----------------------------------------------
 # apt-get upgrade
 
-Configurar el sistema raspbian desde la utilidad raspi-config
--------------------------------------------------------------
-# raspi-config
+Reiniciar nuevamente el sistema operativo
+-----------------------------------------
+# reboot
 
 Instalar y configurar gpsd
 ==========================
