@@ -26,7 +26,7 @@ wget -O - https://www.kismetwireless.net/repos/kismet-release.gpg.key --quiet | 
 echo 'deb [signed-by=/usr/share/keyrings/kismet-archive-keyring.gpg] https://www.kismetwireless.net/repos/apt/release/bookworm bookworm main' | sudo tee /etc/apt/sources.list.d/kismet.list >/dev/null
 apt-get update
 apt-get install -y kismet
-touch /etc/ksimet/kismet_site.conf
+touch /etc/kismet/kismet_site.conf
 echo "gps=gpsd:host=localhost,port=2947" >> /etc/ksimet/kismet_site.conf
 echo "source=wlan1:channels=\"1,2,3,4,5,6,7,8,9,10,11,12,13\",name=wlan1,type=linuxwifi"
 echo "log_prefix=/home/tss/kismet" >> /etc/kismet/kismet_logging.conf
@@ -57,7 +57,7 @@ echo "echo \"Reiniciando kismet ...\"" >> /home/reiniciar/.bashrc
 echo "sudo pkill kismet" >> /home/reiniciar/.bashrc
 echo "sudo systemctl stop gpsd.socket" >> /home/reiniciar/.bashrc
 echo "sleep 10" >> /home/reiniciar/.bashrc
-echo "kismet --log-debug 2>&1 -t \"Kismet_$(date +'%d-%m-%Y_%H-%M-%S')_%i\" &"
+echo "kismet --log-debug 2>&1 -t \"Kismet_$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/reiniciar/.bashrc
 echo "sudo systemctl start gpsd.socket" >> /home/reiniciar/.bashrc
 
 # Agregar un usuario de nombre estado para visualizar el estado de kismet y gpsd
@@ -88,7 +88,7 @@ usermod -aG sudo apagar
 echo "if pidof kismet > /dev/null" >> /home/apagar/.bashrc
 echo "then" >> /home/apagar/.bashrc
 echo "    sudo pkill kismet" >> /home/apagar/.bashrc
-echo "fi"
+echo "fi" >> /home/apagar/.bashrc
 echo "sudo shutdown now" >> /home/apagar/.bashrc
 
 # Crear el servicio rc.local para automatizar el inicio de kismet en el sistema
@@ -96,7 +96,7 @@ touch /etc/rc.local
 echo "#!/bin/bash" >> /etc/rc.local
 echo "# rc.local" >> /etc/rc.local
 echo "echo \"$(date +'%d-%m-%Y_%H-%M-%S') - Arrancando rc.local ...\" >> /var/log/rc.local.log" >> /etc/rc.local
-echo "kismet --log-debug 2>&1 -t \"Kismet_$(date +'%d-%m-%Y_%H-%M-%S')_%ii\" &i" >> /etc/rc.local
+echo "kismet --log-debug 2>&1 -t \"Kismet_$(date +'%d-%m-%Y_%H-%M-%S')\" &i" >> /etc/rc.local
 echo "exit 0" >> /etc/rc.local
 chmod ugo+x /etc/rc.local
 # Crear el archivo de unidad para el servicio rc.local
