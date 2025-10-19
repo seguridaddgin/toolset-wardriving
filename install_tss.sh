@@ -1,12 +1,44 @@
+echo "-------------------------------------------------------------"
+echo "Instalando el ToolSet Wardriving Scout en Raspberry Pi OS ..."
+echo "-------------------------------------------------------------"
+
+echo "\n"
+
+echo "-----------------------------------------------------------------------------------"
+echo "Creando clave para los usuarios del sistema (comenzar, detener, reiniciar, etc) ..."
+echo "-----------------------------------------------------------------------------------"
 # Creación de una clave para los usuarios de sistema
 LENGTH=16
 PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$LENGTH")
 echo "$PASSWORD" > /home/tss/users_passwords.txt
+echo "Ubicación del archivo de clave: /home/tss/users_passwords.txt"
 
+echo "\n"
+
+echo "----------------------------------------------------------------------"
+echo "Agregando usuario tss para la gestión del ToolSet Wardriving Scout ..."
+echo "----------------------------------------------------------------------"
+# Agregar un usuario de nombre tss para iniciar la gestión del TSS
+useradd -m -s /bin/bash tss
+echo 'tss:$PASSWORD' | chpasswd
+# Agregar el usuario tss al grupo sudo
+usermod -aG sudo tss
+echo "sudo bash menu_tss.sh" >> /home/comenzar/.bashrc
+
+echo "\n"
+
+echo "----------------------------------------------------------------------------"
+echo "Actualizando lista de paquetes y los paquetes de sistema Raspberry Pi OS ..."
+echo "----------------------------------------------------------------------------"
 # Actualizar la lista de paquetes y los paquetes del sistema
 apt update
 apt upgrade -y
 
+echo "\n"
+
+echo "----------------------------------"
+echo "Instalando y configurando gpsd ..."
+echo "----------------------------------"
 # Instalación y configuración de gpsd
 apt-get remove gpsd
 apt-get purge gpsd
@@ -19,6 +51,11 @@ echo "OPTIONS=\"udp://*:9999\"" >> /etc/default/gpsd
 sed -i 's/^USBAUTO=".*"/USBAUTO="false"/' /etc/default/gpsd
 systemctl restart gpsd.socket
 
+echo "\n"
+
+echo "------------------------------------"
+echo "Instalando y configurando Kismet ..."
+echo "------------------------------------"
 # Instalación y configuración de kismet
 # Agregar la llave del repositorio oficial de kismet
 wget -O - https://www.kismetwireless.net/repos/kismet-release.gpg.key --quiet | gpg --dearmor | sudo tee /usr/share/keyrings/kismet-archive-keyring.gpg >/dev/null
@@ -34,13 +71,23 @@ echo "log_template=%p/%n.%li" >> /etc/kismet/kismet_logging.conf
 mkdir /home/tss/kismet
 chown -R tss:tss /home/tss/kismet
 
+echo "\n"
+
+echo "------------------------------------------------------------------"
+echo "Agregando usuario comenzar para iniciar la captura de paquetes ..."
+echo "------------------------------------------------------------------"
 # Agregar un usuario de nombre comenzar para iniciar la captura de paquetes con kismet
 useradd -m -s /bin/bash comenzar
 echo 'comenzar:$PASSWORD' | chpasswd
 # Agregar el usuario comenzar al grupo sudo
 usermod -aG sudo comenzar
-echo "kismet --log-debug 2>&1 -t \"Kismet_$(date +'%d-%m-%Y_%H-%M-%S')_%i\" &" >> /home/comenzar/.bashrc
+echo "kismet --log-debug 2>&1 -t \"Kismet_$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/comenzar/.bashrc
 
+echo "\n"
+
+echo "----------------------------------------------------------------"
+echo "Agregando usuario detener para frenar la captura de paquetes ..."
+echo "----------------------------------------------------------------"
 # Agregar un usuario de nombre detener para frenar la captura de paquetes con kismet
 useradd -m -s /bin/bash detener
 echo 'detener:$PASSWORD' | chpasswd
@@ -48,6 +95,11 @@ echo 'detener:$PASSWORD' | chpasswd
 usermod -aG sudo detener
 echo "sudo pkill kismet" >> /home/detener/.bashrc
 
+echo "\n"
+
+echo "---------------------------------------------------------------------------------------"
+echo "Agregando usuario reiniciar para detener y volver a comenzar la captura de paquetes ..."
+echo "---------------------------------------------------------------------------------------"
 # Agregar un usuario de nombre reiniciar para bajar e iniciar kismet
 useradd -m -s /bin/bash reiniciar
 echo 'reiniciar:$PASSWORD' | chpasswd
@@ -60,6 +112,11 @@ echo "sleep 10" >> /home/reiniciar/.bashrc
 echo "kismet --log-debug 2>&1 -t \"Kismet_$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/reiniciar/.bashrc
 echo "sudo systemctl start gpsd.socket" >> /home/reiniciar/.bashrc
 
+echo "\n"
+
+echo "-----------------------------------------------------------------------"
+echo "Agregando usuario estado para visualizar el estado de Kismet y gpsd ..."
+echo "-----------------------------------------------------------------------"
 # Agregar un usuario de nombre estado para visualizar el estado de kismet y gpsd
 useradd -m -s /bin/bash estado
 echo 'estado:$PASSWORD' | chpasswd
@@ -80,6 +137,11 @@ echo "    echo \"gpsd no se encuentra en ejecuión\"" >> /home/estado/.bashrc
 echo "fi" >> /home/estado/.bashrc
 echo "\n" >> /home/estado/.bashrc
 
+echo "\n"
+
+echo "------------------------------------------------------------"
+echo "Agregando usuario apagar para bajar el sistema operativo ..."
+echo "------------------------------------------------------------"
 # Agregar un usuario de nombre apagar para bajar el sistema raspbian
 useradd -m -s /bin/bash apagar
 echo 'apagar:$PASSWORD' | chpasswd
@@ -91,12 +153,17 @@ echo "    sudo pkill kismet" >> /home/apagar/.bashrc
 echo "fi" >> /home/apagar/.bashrc
 echo "sudo shutdown now" >> /home/apagar/.bashrc
 
+echo "\n"
+
+echo "------------------------------------------------------------------------------------------------"
+echo "Creando el servicio rc.local para automatizar el inicio de Kismet en el arranque del sistema ..."
+echo "------------------------------------------------------------------------------------------------"
 # Crear el servicio rc.local para automatizar el inicio de kismet en el sistema
 touch /etc/rc.local
 echo "#!/bin/bash" >> /etc/rc.local
 echo "# rc.local" >> /etc/rc.local
-echo "echo \"$(date +'%d-%m-%Y_%H-%M-%S') - Arrancando rc.local ...\" >> /var/log/rc.local.log" >> /etc/rc.local
-echo "kismet --log-debug 2>&1 -t \"Kismet_$(date +'%d-%m-%Y_%H-%M-%S')\" &i" >> /etc/rc.local
+echo "echo \"\$(date +'%d-%m-%Y_%H-%M-%S') - Arrancando rc.local ...\" >> /var/log/rc.local.log" >> /etc/rc.local
+echo "kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\"" >> /etc/rc.local
 echo "exit 0" >> /etc/rc.local
 chmod ugo+x /etc/rc.local
 # Crear el archivo de unidad para el servicio rc.local
@@ -119,6 +186,19 @@ systemctl daemon-reload
 systemctl enable rc-local
 systemctl start rc-local
 
-# Reiniciar el sistema para comenzar a capturar redes Wi-Fi
-reboot
+echo "\n"
 
+echo "-----------------------------------------------------------------"
+echo "Instalando el menú para gestionar el ToolSet Wardriving Scout ..."
+echo "-----------------------------------------------------------------"
+# Copiar el script que administra el menú del TSS
+cp menu_tss.sh /home/tss/menu_tss.sh
+
+echo "\n"
+
+echo "-------------------------------------------------"
+echo "Instalación completada!. Se reiniciará el sistema"
+echo "-------------------------------------------------"
+# Reiniciar el sistema para comenzar a capturar redes Wi-Fi
+sleep 3
+reboot
