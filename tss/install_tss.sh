@@ -9,7 +9,7 @@ echo "--------------------------------------------------------------------------
 echo "Creando clave para los usuarios del sistema (comenzar, detener, reiniciar, etc) ..."
 echo "-----------------------------------------------------------------------------------"
 # Creación de una clave para los usuarios de sistema
-LENGTH=16
+LENGTH=8
 PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$LENGTH")
 echo "$PASSWORD" > /root/users_passwords.txt
 echo "Ubicación del archivo de clave: /root/users_passwords.txt"
@@ -181,6 +181,7 @@ echo "Instalando el menú para gestionar el ToolSet Wardriving Scout ..."
 echo "-----------------------------------------------------------------"
 # Copiar el script que administra el menú del TSS
 cp menu_tss.sh /home/tss/menu_tss.sh
+chmod ugo+x /home/tss/menu_tss.sh
 apt install -y dialog
 
 echo ""
@@ -225,6 +226,7 @@ echo "-------------------------------------------------"
 echo "Instalación completada!. Se reiniciará el sistema"
 echo "-------------------------------------------------"
 echo "Ubicación del archivo de clave: /root/users_passwords.txt"
+echo "Clave para usuarios: $PASSWORD"
 # Reiniciar el sistema para comenzar a capturar redes Wi-Fi
 sleep 5
 reboot
