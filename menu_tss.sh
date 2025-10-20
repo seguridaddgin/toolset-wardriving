@@ -13,7 +13,7 @@ fi
 PROC_NAME="kismet"
 KISMET_BIN="/usr/bin/kismet"
 KISMET_USER="root"            # Usuario que ejecuta kismet
-KISMET_IFACE="wlan1"          # Interfaz de captura
+KISMET_IFACE="wifi24"          # Interfaz de captura
 KISMET_LOGDIR="/var/log/kismet"
 PIDFILE="/var/run/kismet.pid"
 
@@ -95,7 +95,7 @@ view_file_capture() {
     if [ -f "$PIDFILE" ] && ps -p $(cat "$PIDFILE") > /dev/null; then
         LINE=$(ps aux | grep '[k]ismet' | head -n 1)
         TARGET=$(echo "$LINE" | sed -n 's/.*-t \([^ ]*\).*/\1/p')
-        FILE_NAME_CAP="/home/lasi/kismet/${TARGET}.kismet"
+        FILE_NAME_CAP="/home/tss/kismet/${TARGET}.kismet"
         SIZE_FILE_CAP=$(stat -c %s "$FILE_NAME_CAP")
         dialog --msgbox "Nombre: $FILE_NAME_CAP\nTamaño: $SIZE_FILE_CAP bytes" 7 70
     else
