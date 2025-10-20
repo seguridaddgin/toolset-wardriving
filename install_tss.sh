@@ -84,7 +84,7 @@ useradd -m -s /bin/bash comenzar
 echo 'comenzar:$PASSWORD' | chpasswd
 # Agregar el usuario comenzar al grupo sudo
 usermod -aG sudo comenzar
-echo "sudo kismet --log-debug 2>&1 -t \"Kismet_$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/comenzar/.bashrc
+echo "sudo kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/comenzar/.bashrc
 
 echo ""
 
@@ -112,8 +112,8 @@ echo "echo \"Reiniciando kismet ...\"" >> /home/reiniciar/.bashrc
 echo "sudo pkill kismet" >> /home/reiniciar/.bashrc
 echo "sudo systemctl stop gpsd.socket" >> /home/reiniciar/.bashrc
 echo "sleep 10" >> /home/reiniciar/.bashrc
-echo "sudo kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/reiniciar/.bashrc
 echo "sudo systemctl start gpsd.socket" >> /home/reiniciar/.bashrc
+echo "sudo kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/reiniciar/.bashrc
 
 echo ""
 
