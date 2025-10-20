@@ -1,3 +1,4 @@
+#!/bin/bash
 echo "-------------------------------------------------------------"
 echo "Instalando el ToolSet Wardriving Scout en Raspberry Pi OS ..."
 echo "-------------------------------------------------------------"
@@ -46,6 +47,7 @@ echo "----------------------------------"
 apt-get remove gpsd
 apt-get purge gpsd
 apt-get install -y gpsd
+apt-get install -y gpsd-clients
 systemctl stop gpsd
 systemctl stop gpsd.socket
 systemctl start gpsd.socket
@@ -213,15 +215,16 @@ echo "RemainAfterExit=yes" >> /etc/systemd/system/rc-local.service
 echo "" >> /etc/systemd/system/rc-local.service
 echo "[Install]" >> /etc/systemd/system/rc-local.service
 echo "WantedBy=multi-user.target" >> /etc/systemd/system/rc-local.service
-systemctl daemon-reload
-systemctl enable rc-local
-systemctl start rc-local
+timeout 5 systemctl daemon-reload
+timeout 5 systemctl enable rc-local
+timeout 5 systemctl start rc-local
 
 echo ""
 
 echo "-------------------------------------------------"
 echo "Instalación completada!. Se reiniciará el sistema"
 echo "-------------------------------------------------"
+echo "Ubicación del archivo de clave: /root/users_passwords.txt"
 # Reiniciar el sistema para comenzar a capturar redes Wi-Fi
-sleep 3
+sleep 5
 reboot
