@@ -1,5 +1,5 @@
 #!/bin/bash
-# menu_tsh.sh - Administrador interactivo del ToolSet Wardriving Hunter
+# menu_tss.sh - Administrador interactivo del ToolSet Wardriving Scout
 
 # Verificar si el paquete dialog se encuentra instalado
 if ! command -v dialog &> /dev/null; then
@@ -11,7 +11,6 @@ fi
 
 # Configuración de las variables
 PROC_NAME="kismet"
-DEVICE="/dev/ttyACM0"
 KISMET_BIN="/usr/bin/kismet"
 KISMET_USER="root"            # Usuario que ejecuta kismet
 KISMET_LOGDIR="/var/log/kismet"
@@ -65,7 +64,7 @@ restart_kismet() {
 
 status_kismet() {
     if [ -f "$PIDFILE" ] && ps -p $(cat "$PIDFILE") > /dev/null; then
-        STATUS="Kismet está corriendo con PID $(cat $PIDFILE)."
+        STATUS="Kismet está corriendo con el PID $(cat $PIDFILE)."
     else
         STATUS="Kismet no se está ejecutando."
     fi
@@ -94,7 +93,7 @@ view_file_capture() {
     if [ -f "$PIDFILE" ] && ps -p $(cat "$PIDFILE") > /dev/null; then
         LINE=$(ps aux | grep '[k]ismet' | head -n 1)
         TARGET=$(echo "$LINE" | sed -n 's/.*-t \([^ ]*\).*/\1/p')
-        FILE_NAME_CAP="/home/lasi/kismet/${TARGET}.kismet"
+        FILE_NAME_CAP="/home/tss/kismet/${TARGET}.kismet"
         SIZE_FILE_CAP=$(stat -c %s "$FILE_NAME_CAP")
         dialog --msgbox "Nombre: $FILE_NAME_CAP\nTamaño: $SIZE_FILE_CAP bytes" 7 70
     else
@@ -110,25 +109,21 @@ kismet_check_status() {
     fi
 }
 
-gps_check_status() {
+gpsd_check_status() {
     TIMEOUT=3
-    DATA=$(timeout "$TIMEOUT" cat "$DEVICE" 2>/dev/null | grep -m 1 '^\$GP')
-
-    if [ -n "$DATA" ]; then
+    if timeout "$TIMEOUT" gpspipe -w -n 5 2>/dev/null | grep -q '"mode":[23]'; then
         echo "GPSd Ok"
     else
         echo "No GPSd"
     fi
 }
 
-status_gps() {
+status_gpsd() {
     TIMEOUT=3
-    DATA=$(timeout "$TIMEOUT" cat "$DEVICE" 2>/dev/null | grep -m 1 '^\$GP')
-
-    if [ -n "$DATA" ]; then
-        STATUS="Kismet recibe datos del GPS"
+    if timeout "$TIMEOUT" gpspipe -w -n 5 2>/dev/null | grep -q '"mode":[23]'; then
+        STATUS="gpsd recibe datos del GPS"
     else
-        STATUS="Kismet NO recibe datos del GPS"
+        STATUS="gpsd NO recibe datos"
     fi
     dialog --msgbox "$STATUS" 6 50
 }
@@ -138,17 +133,17 @@ status_gps() {
 while true; do
 
     STATUS_KISMET_MSG=$(kismet_check_status)
-    STATUS_GPS_MSG=$(gps_check_status)
+    STATUS_GPSD_MSG=$(gpsd_check_status)
 
     CHOICE=$(dialog --clear --stdout \
-        --title " ToolSet Wardriving Hunter | $STATUS_KISMET_MSG | $STATUS_GPS_MSG " \
+        --title " ToolSet Wardriving Tracker | $STATUS_KISMET_MSG | $STATUS_GPSD_MSG " \
         --menu "Seleccione una acción:" 16 70 6 \
         1 "Iniciar Kismet" \
         2 "Detener Kismet" \
         3 "Reiniciar Kismet" \
         4 "Ver estado de Kismet" \
         5 "Ver archivo de captura de Kismet" \
-        6 "Ver estado gps" \
+        6 "Ver estado gpsd" \
         7 "Reiniciar el sistema" \
         8 "Apagar el sistema" \
         0 "Salir") 
@@ -159,7 +154,7 @@ while true; do
         3) restart_kismet ;;
         4) status_kismet ;;
         5) view_file_capture ;;
-        6) status_gps ;;
+        6) status_gpsd ;;
         7) reboot_system ;;
         8) shutdown_system ;;
         0) clear; exit 0 ;;

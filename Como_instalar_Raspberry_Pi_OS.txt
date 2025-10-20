@@ -4,7 +4,7 @@ Como instalar y configurar Raspberry Pi OS
 
 Este documento describe la instalación y configuración del sistema operativo Raspbeery Pi OS para Raspberry Pi 3 B+ y Raspberry Pi Zero 2, utilizado como sistema base para los ToolSet de Wardriving:
 - ToolSet Wardriving Scout (TSS)
-- ToolSet Wardriving Tracert (TST)
+- ToolSet Wardriving Tracker (TST)
 - ToolSet Wardriving Hunter (TSH)
 
 Descargar la imagen del sistema operativo Raspberry Pi OS
