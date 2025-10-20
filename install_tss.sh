@@ -20,7 +20,7 @@ echo "Agregando usuario tss para la gestión del ToolSet Wardriving Scout ..."
 echo "----------------------------------------------------------------------"
 # Agregar un usuario de nombre tss para iniciar la gestión del TSS
 useradd -m -s /bin/bash tss
-echo 'tss:$PASSWORD' | chpasswd
+usermod --password $(openssl passwd -1 "$PASSWORD") tss
 # Agregar el usuario tss al grupo sudo
 usermod -aG sudo tss
 echo "sudo bash menu_tss.sh" >> /home/tss/.bashrc
@@ -31,7 +31,7 @@ echo "--------------------------------------------------------------------------
 echo "Actualizando lista de paquetes y los paquetes de sistema Raspberry Pi OS ..."
 echo "----------------------------------------------------------------------------"
 # Actualizar la lista de paquetes y los paquetes del sistema
-# Make apt non-interactive
+# Hacer que apt sea non-interactive
 export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 apt update
@@ -81,7 +81,7 @@ echo "Agregando usuario comenzar para iniciar la captura de paquetes ..."
 echo "------------------------------------------------------------------"
 # Agregar un usuario de nombre comenzar para iniciar la captura de paquetes con kismet
 useradd -m -s /bin/bash comenzar
-echo 'comenzar:$PASSWORD' | chpasswd
+usermod --password $(openssl passwd -1 "$PASSWORD") comenzar
 # Agregar el usuario comenzar al grupo sudo
 usermod -aG sudo comenzar
 echo "sudo kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/comenzar/.bashrc
@@ -93,7 +93,7 @@ echo "Agregando usuario detener para frenar la captura de paquetes ..."
 echo "----------------------------------------------------------------"
 # Agregar un usuario de nombre detener para frenar la captura de paquetes con kismet
 useradd -m -s /bin/bash detener
-echo 'detener:$PASSWORD' | chpasswd
+usermod --password $(openssl passwd -1 "$PASSWORD") detener
 # Agregar el usuario detener al grupo sudo
 usermod -aG sudo detener
 echo "sudo pkill kismet" >> /home/detener/.bashrc
@@ -105,7 +105,7 @@ echo "Agregando usuario reiniciar para detener y volver a comenzar la captura de
 echo "---------------------------------------------------------------------------------------"
 # Agregar un usuario de nombre reiniciar para bajar e iniciar kismet
 useradd -m -s /bin/bash reiniciar
-echo 'reiniciar:$PASSWORD' | chpasswd
+usermod --password $(openssl passwd -1 "$PASSWORD") reiniciar
 # Agregar el usuario reiniciar al grupo sudo
 usermod -aG sudo reiniciar
 echo "echo \"Reiniciando kismet ...\"" >> /home/reiniciar/.bashrc
@@ -122,7 +122,7 @@ echo "Agregando usuario estado para visualizar el estado de Kismet y gpsd ..."
 echo "-----------------------------------------------------------------------"
 # Agregar un usuario de nombre estado para visualizar el estado de kismet y gpsd
 useradd -m -s /bin/bash estado
-echo 'estado:$PASSWORD' | chpasswd
+usermod --password $(openssl passwd -1 "$PASSWORD") estado
 # Agregar el usuario estado al grupo sudo
 usermod -aG sudo estado
 echo "if pidof kismet > /dev/null" >> /home/estado/.bashrc
@@ -147,7 +147,7 @@ echo "Agregando usuario reboot para reiniciar el sistema operativo ..."
 echo "----------------------------------------------------------------"
 # Agregar un usuario de nombre reboot para reiniciar el sistema Raspberry Pi OS
 useradd -m -s /bin/bash reboot
-echo 'reboot:$PASSWORD' | chpasswd
+usermod --password $(openssl passwd -1 "$PASSWORD") reboot
 # Agregar el usuario reboot al grupo sudo
 usermod -aG sudo reboot
 echo "if pidof kismet > /dev/null" >> /home/reboot/.bashrc
@@ -163,7 +163,7 @@ echo "Agregando usuario apagar para bajar el sistema operativo ..."
 echo "------------------------------------------------------------"
 # Agregar un usuario de nombre apagar para bajar el sistema raspbian
 useradd -m -s /bin/bash apagar
-echo 'apagar:$PASSWORD' | chpasswd
+usermod --password $(openssl passwd -1 "$PASSWORD") apagar
 # Agregar el usuario apagar al grupo sudo
 usermod -aG sudo apagar
 echo "if pidof kismet > /dev/null" >> /home/apagar/.bashrc
@@ -171,6 +171,15 @@ echo "then" >> /home/apagar/.bashrc
 echo "    sudo pkill kismet" >> /home/apagar/.bashrc
 echo "fi" >> /home/apagar/.bashrc
 echo "sudo shutdown now" >> /home/apagar/.bashrc
+
+echo ""
+
+echo "-----------------------------------------------------------------"
+echo "Instalando el menú para gestionar el ToolSet Wardriving Scout ..."
+echo "-----------------------------------------------------------------"
+# Copiar el script que administra el menú del TSS
+cp menu_tss.sh /home/tss/menu_tss.sh
+apt install -y dialog
 
 echo ""
 
@@ -207,15 +216,6 @@ echo "WantedBy=multi-user.target" >> /etc/systemd/system/rc-local.service
 systemctl daemon-reload
 systemctl enable rc-local
 systemctl start rc-local
-
-echo ""
-
-echo "-----------------------------------------------------------------"
-echo "Instalando el menú para gestionar el ToolSet Wardriving Scout ..."
-echo "-----------------------------------------------------------------"
-# Copiar el script que administra el menú del TSS
-cp menu_tss.sh /home/tss/menu_tss.sh
-apt install -y dialog
 
 echo ""
 
