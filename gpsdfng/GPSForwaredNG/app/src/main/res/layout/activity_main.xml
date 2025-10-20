@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/gris_claro"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/textViewDireccionIP"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Dirección IP Servidor GPSd"
+        android:textSize="18sp"
+        android:layout_alignParentTop="true"/>
+
+    <EditText
+        android:id="@+id/editTextIP"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="192.168.49.121"
+        android:layout_below="@+id/textViewDireccionIP"
+        android:layout_marginTop="16dp"/>
+
+    <TextView
+        android:id="@+id/textViewDireccionPort"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Puerto del Servidor GPSd"
+        android:textSize="18sp"
+        android:layout_below="@+id/editTextIP"
+        android:layout_marginTop="16dp"/>
+
+    <EditText
+        android:id="@+id/editTextPort"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="9999"
+        android:layout_below="@+id/textViewDireccionPort"
+        android:layout_marginTop="16dp"/>
+
+    <Button
+        android:id="@+id/startButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Iniciar"
+        android:layout_below="@+id/editTextPort"
+        android:layout_marginTop="16dp"
+        android:layout_centerInParent="true"/>
+
+    <Button
+        android:id="@+id/stopButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Detener"
+        android:layout_below="@+id/startButton"
+        android:layout_marginTop="16dp"
+        android:layout_centerInParent="true"/>
+
+    <TextView
+        android:id="@+id/textViewNMEA"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxWidth="200dp"
+        android:text="formato NMEA"
+        android:textSize="12sp"
+        android:layout_below="@+id/stopButton"
+        android:layout_marginTop="64dp"
+        android:layout_centerInParent="true" />
+
+    <CheckBox
+        android:id="@+id/keepCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mantener la pantalla encendida"
+        android:layout_below="@+id/textViewNMEA"
+        android:layout_marginTop="64dp"
+        android:layout_centerInParent="true" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GPSd Forwared NG+ v 1.0.12"
+        android:textSize="18sp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerInParent="true"/>
+
+
+
+</RelativeLayout>
