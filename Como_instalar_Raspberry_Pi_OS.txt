@@ -1,0 +1,67 @@
+==========================================
+Como instalar y configurar Raspberry Pi OS
+==========================================
+
+Este documento describe la instalación y configuración del sistema operativo Raspbeery Pi OS para Raspberry Pi 3 B+ y Raspberry Pi Zero 2, utilizado como sistema base para los ToolSet de Wardriving:
+- ToolSet Wardriving Scout (TSS)
+- ToolSet Wardriving Tracert (TST)
+- ToolSet Wardriving Hunter (TSH)
+
+Descargar la imagen del sistema operativo Raspberry Pi OS
+---------------------------------------------------------
+Acceder a la siguiente URL: https://www.raspberrypi.com/software/operating-systems/.
+
+Descargar e instalar el Raspberry Pi Imager
+-------------------------------------------
+Acceder a la siguiente URL: https://www.raspberrypi.com/software/.
+
+Cargar la imagen de Raspberry Pi OS en la tarjeta microSD
+---------------------------------------------------------
+Iniciar el programa Imager de Raspberry para cargar la imagen del sistema operativo.
+
+Iniciar Raspeberry Pi OS desde la Raspberry Pi 3 B+ o Raspberry Pi Zero 2
+-------------------------------------------------------------------------
+Se recomienda iniciar la Raspberry Pi con todo el hardware conectado (miscroSD, placa de red Wi-Fi USB).
+
+Configurar el teclado
+---------------------
+Al iniciar por primera vez el sistema Raspberry Pi OS, se solicita configurar el teclado, se recomienda seleccionar Spanish Latin American, pero depende del teclado conectado a la Raspberry.
+
+Configurar un usuario en el sistema operativo
+---------------------------------------------
+En el primer arranque del sistema, también se pide configurar un usuario normal en el sistema operativo, se recomienda indicar el nombre de usuario personal. Más tarde, se solicitará configurar la clave del usuario creado.
+
+Ingresar al sistema operativo con el usuario creado
+---------------------------------------------------
+Utilizar las credenciales de acceso indicadas anteriormente.
+
+Pasar a usuario administrador (root)
+------------------------------------
+$ sudo su
+
+Ejecutar la utilidad de configuración oficial de Raspberry Pi OS
+----------------------------------------------------------------
+# raspi-config
+
+Dentro de la utilidad de configuración (raspi-config), activar SSH, configurar localización, región, teclado y configurar Wi-Fi
+-------------------------------------------------------------------------------------------------------------------------------
+Cada configuración se puede encontrar en las opciones de menú de la utilidad raspi-config.
+Configurar locales, en_US.UTF-8, es_AR.UTF-8 (default) y es_ES.UTF-8.
+Configurar región, Americas/Argentina/Buenos_Aires.
+Configurar teclado, genérico de 105 y español latino.
+Configurar país para WLAN, AR.
+
+Configurar SSH
+--------------
+# vi /etc/ssh/sshd_config
+Dentro del archivo de configuración, se deben especificar las siguientes opciones de configuración:
+PermitRootLogin no # No permitir login directo de root
+X11Forwarding no # Desactivar reenvíos innecesarios
+AllowTcpForwarding no # Desactivar reenvíos innecesarios
+PermitTunnel no # Desactivar reenvíos innecesarios
+MaxAuthTries 3 # Limitar intentos
+LoginGraceTime 30 # Aplicar desconexión rápida
+
+Salir de raspi-config y reiniciar el sistema operativo
+------------------------------------------------------
+# reboot

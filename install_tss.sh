@@ -4,6 +4,17 @@ echo "-------------------------------------------------------------"
 
 echo ""
 
+echo "-----------------------------------------------------------------------------------"
+echo "Creando clave para los usuarios del sistema (comenzar, detener, reiniciar, etc) ..."
+echo "-----------------------------------------------------------------------------------"
+# Creación de una clave para los usuarios de sistema
+LENGTH=16
+PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$LENGTH")
+echo "$PASSWORD" > /root/users_passwords.txt
+echo "Ubicación del archivo de clave: /root/users_passwords.txt"
+
+echo ""
+
 echo "----------------------------------------------------------------------"
 echo "Agregando usuario tss para la gestión del ToolSet Wardriving Scout ..."
 echo "----------------------------------------------------------------------"
@@ -13,17 +24,6 @@ echo 'tss:$PASSWORD' | chpasswd
 # Agregar el usuario tss al grupo sudo
 usermod -aG sudo tss
 echo "sudo bash menu_tss.sh" >> /home/tss/.bashrc
-
-echo ""
-
-echo "-----------------------------------------------------------------------------------"
-echo "Creando clave para los usuarios del sistema (comenzar, detener, reiniciar, etc) ..."
-echo "-----------------------------------------------------------------------------------"
-# Creación de una clave para los usuarios de sistema
-LENGTH=16
-PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$LENGTH")
-echo "$PASSWORD" > /home/tss/users_passwords.txt
-echo "Ubicación del archivo de clave: /home/tss/users_passwords.txt"
 
 echo ""
 
