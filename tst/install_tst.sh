@@ -22,8 +22,9 @@ echo "------------------------------------------------------------------------"
 # Agregar un usuario de nombre tst para iniciar la gestión del TST
 useradd -m -s /bin/bash tst
 usermod --password $(openssl passwd -1 "$PASSWORD") tst
-# Agregar el usuario tst al grupo sudo
+# Agregar el usuario tst al grupo sudo y adm
 usermod -aG sudo tst
+usermod -aG adm tst
 echo "sudo bash menu_tst.sh" >> /home/tst/.bashrc
 
 echo ""
@@ -85,8 +86,9 @@ echo "------------------------------------------------------------------"
 # Agregar un usuario de nombre comenzar para iniciar la captura de paquetes con kismet
 useradd -m -s /bin/bash comenzar
 usermod --password $(openssl passwd -1 "$PASSWORD") comenzar
-# Agregar el usuario comenzar al grupo sudo
+# Agregar el usuario comenzar al grupo sudo y adm
 usermod -aG sudo comenzar
+usermod -aG adm comenzar
 echo "sudo kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/comenzar/.bashrc
 
 echo ""
@@ -97,8 +99,9 @@ echo "----------------------------------------------------------------"
 # Agregar un usuario de nombre detener para frenar la captura de paquetes con kismet
 useradd -m -s /bin/bash detener
 usermod --password $(openssl passwd -1 "$PASSWORD") detener
-# Agregar el usuario detener al grupo sudo
+# Agregar el usuario detener al grupo sudo y adm
 usermod -aG sudo detener
+usermod -aG adm detener
 echo "sudo pkill kismet" >> /home/detener/.bashrc
 
 echo ""
@@ -109,8 +112,9 @@ echo "--------------------------------------------------------------------------
 # Agregar un usuario de nombre reiniciar para bajar e iniciar kismet
 useradd -m -s /bin/bash reiniciar
 usermod --password $(openssl passwd -1 "$PASSWORD") reiniciar
-# Agregar el usuario reiniciar al grupo sudo
+# Agregar el usuario reiniciar al grupo sudo y adm
 usermod -aG sudo reiniciar
+usermod -aG adm reiniciar
 echo "echo \"Reiniciando kismet ...\"" >> /home/reiniciar/.bashrc
 echo "sudo pkill kismet" >> /home/reiniciar/.bashrc
 echo "sudo systemctl stop gpsd.socket" >> /home/reiniciar/.bashrc
@@ -126,8 +130,9 @@ echo "-----------------------------------------------------------------------"
 # Agregar un usuario de nombre estado para visualizar el estado de kismet y gpsd
 useradd -m -s /bin/bash estado
 usermod --password $(openssl passwd -1 "$PASSWORD") estado
-# Agregar el usuario estado al grupo sudo
+# Agregar el usuario estado al grupo sudo y adm
 usermod -aG sudo estado
+usermod -aG adm estado
 echo "if pidof kismet > /dev/null" >> /home/estado/.bashrc
 echo "then" >> /home/estado/.bashrc
 echo "    echo \"Kismet está en ejecución\"" >> /home/estado/.bashrc
@@ -151,8 +156,9 @@ echo "----------------------------------------------------------------"
 # Agregar un usuario de nombre reboot para reiniciar el sistema Raspberry Pi OS
 useradd -m -s /bin/bash reboot
 usermod --password $(openssl passwd -1 "$PASSWORD") reboot
-# Agregar el usuario reboot al grupo sudo
+# Agregar el usuario reboot al grupo sudo y adm
 usermod -aG sudo reboot
+usermod -aG adm reboot
 echo "if pidof kismet > /dev/null" >> /home/reboot/.bashrc
 echo "then" >> /home/reboot/.bashrc
 echo "    sudo pkill kismet" >> /home/reboot/.bashrc
@@ -167,8 +173,9 @@ echo "------------------------------------------------------------"
 # Agregar un usuario de nombre apagar para bajar el sistema raspbian
 useradd -m -s /bin/bash apagar
 usermod --password $(openssl passwd -1 "$PASSWORD") apagar
-# Agregar el usuario apagar al grupo sudo
+# Agregar el usuario apagar al grupo sudo y adm
 usermod -aG sudo apagar
+usermod -aG adm apagar
 echo "if pidof kismet > /dev/null" >> /home/apagar/.bashrc
 echo "then" >> /home/apagar/.bashrc
 echo "    sudo pkill kismet" >> /home/apagar/.bashrc
