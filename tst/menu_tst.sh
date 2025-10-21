@@ -1,5 +1,5 @@
 #!/bin/bash
-# menu_tss.sh - Administrador interactivo del ToolSet Wardriving Scout
+# menu_tss.sh - Administrador interactivo del ToolSet Wardriving Tracker
 
 # Verificar si el paquete dialog se encuentra instalado
 if ! command -v dialog &> /dev/null; then

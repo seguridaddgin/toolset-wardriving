@@ -1,7 +1,7 @@
 #!/bin/bash
-echo "-------------------------------------------------------------"
-echo "Instalando el ToolSet Wardriving Scout en Raspberry Pi OS ..."
-echo "-------------------------------------------------------------"
+echo "---------------------------------------------------------------"
+echo "Instalando el ToolSet Wardriving Tracker en Raspberry Pi OS ..."
+echo "---------------------------------------------------------------"
 
 echo ""
 
@@ -16,16 +16,15 @@ echo "Ubicación del archivo de clave: /root/users_passwords.txt"
 
 echo ""
 
-echo "----------------------------------------------------------------------"
-echo "Agregando usuario tss para la gestión del ToolSet Wardriving Scout ..."
-echo "----------------------------------------------------------------------"
-# Agregar un usuario de nombre tss para iniciar la gestión del TSS
-useradd -m -s /bin/bash tss
-usermod --password $(openssl passwd -1 "$PASSWORD") tss
-# Agregar el usuario tss al grupo sudo y adm
-usermod -aG sudo tss
-usermod -aG adm tss
-echo "sudo bash menu_tss.sh" >> /home/tss/.bashrc
+echo "------------------------------------------------------------------------"
+echo "Agregando usuario tst para la gestión del ToolSet Wardriving Tracker ..."
+echo "------------------------------------------------------------------------"
+# Agregar un usuario de nombre tst para iniciar la gestión del TST
+useradd -m -s /bin/bash tst
+usermod --password $(openssl passwd -1 "$PASSWORD") tst
+# Agregar el usuario tst al grupo sudo
+usermod -aG sudo tst
+echo "sudo bash menu_tst.sh" >> /home/tst/.bashrc
 
 echo ""
 
@@ -72,10 +71,11 @@ apt-get install -y kismet
 touch /etc/kismet/kismet_site.conf
 echo "gps=gpsd:host=localhost,port=2947" >> /etc/kismet/kismet_site.conf
 echo "source=wifi24:channels=\"1,2,3,4,5,6,7,8,9,10,11,12,13\",name=wifi24,type=linuxwifi" >> /etc/kismet/kismet_site.conf
-sed -i 's|^[[:space:]]*log_prefix=\./|log_prefix=/home/tss/kismet|' /etc/kismet/kismet_logging.conf
+echo "source=wifi58:channels=\"36,48\",name=wifi58,type=linuxwifi" >> /etc/kismet/kismet_site.conf
+sed -i 's|^[[:space:]]*log_prefix=\./|log_prefix=/home/tst/kismet|' /etc/kismet/kismet_logging.conf
 sed -i 's|log_template=%p/%n-%D-%t-%i\.%l|log_template=%p/%n\.%l|' /etc/kismet/kismet_logging.conf
-mkdir /home/tss/kismet
-chown -R tss:tss /home/tss/kismet
+mkdir /home/tst/kismet
+chown -R tst:tst /home/tst/kismet
 
 echo ""
 
@@ -85,9 +85,8 @@ echo "------------------------------------------------------------------"
 # Agregar un usuario de nombre comenzar para iniciar la captura de paquetes con kismet
 useradd -m -s /bin/bash comenzar
 usermod --password $(openssl passwd -1 "$PASSWORD") comenzar
-# Agregar el usuario comenzar al grupo sudo y adm
+# Agregar el usuario comenzar al grupo sudo
 usermod -aG sudo comenzar
-usermod -aG adm comenzar
 echo "sudo kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/comenzar/.bashrc
 
 echo ""
@@ -98,9 +97,8 @@ echo "----------------------------------------------------------------"
 # Agregar un usuario de nombre detener para frenar la captura de paquetes con kismet
 useradd -m -s /bin/bash detener
 usermod --password $(openssl passwd -1 "$PASSWORD") detener
-# Agregar el usuario detener al grupo sudo y adm
+# Agregar el usuario detener al grupo sudo
 usermod -aG sudo detener
-usermod -aG adm detener
 echo "sudo pkill kismet" >> /home/detener/.bashrc
 
 echo ""
@@ -111,9 +109,8 @@ echo "--------------------------------------------------------------------------
 # Agregar un usuario de nombre reiniciar para bajar e iniciar kismet
 useradd -m -s /bin/bash reiniciar
 usermod --password $(openssl passwd -1 "$PASSWORD") reiniciar
-# Agregar el usuario reiniciar al grupo sudo y adm
+# Agregar el usuario reiniciar al grupo sudo
 usermod -aG sudo reiniciar
-usermod -aG adm reiniciar
 echo "echo \"Reiniciando kismet ...\"" >> /home/reiniciar/.bashrc
 echo "sudo pkill kismet" >> /home/reiniciar/.bashrc
 echo "sudo systemctl stop gpsd.socket" >> /home/reiniciar/.bashrc
@@ -129,9 +126,8 @@ echo "-----------------------------------------------------------------------"
 # Agregar un usuario de nombre estado para visualizar el estado de kismet y gpsd
 useradd -m -s /bin/bash estado
 usermod --password $(openssl passwd -1 "$PASSWORD") estado
-# Agregar el usuario estado al grupo sudo y adm
+# Agregar el usuario estado al grupo sudo
 usermod -aG sudo estado
-usermod -aG adm estado
 echo "if pidof kismet > /dev/null" >> /home/estado/.bashrc
 echo "then" >> /home/estado/.bashrc
 echo "    echo \"Kismet está en ejecución\"" >> /home/estado/.bashrc
@@ -155,9 +151,8 @@ echo "----------------------------------------------------------------"
 # Agregar un usuario de nombre reboot para reiniciar el sistema Raspberry Pi OS
 useradd -m -s /bin/bash reboot
 usermod --password $(openssl passwd -1 "$PASSWORD") reboot
-# Agregar el usuario reboot al grupo sudo y adm
+# Agregar el usuario reboot al grupo sudo
 usermod -aG sudo reboot
-usermod -aG adm reboot
 echo "if pidof kismet > /dev/null" >> /home/reboot/.bashrc
 echo "then" >> /home/reboot/.bashrc
 echo "    sudo pkill kismet" >> /home/reboot/.bashrc
@@ -172,9 +167,8 @@ echo "------------------------------------------------------------"
 # Agregar un usuario de nombre apagar para bajar el sistema raspbian
 useradd -m -s /bin/bash apagar
 usermod --password $(openssl passwd -1 "$PASSWORD") apagar
-# Agregar el usuario apagar al grupo sudo y adm
+# Agregar el usuario apagar al grupo sudo
 usermod -aG sudo apagar
-usermod -aG adm apagar
 echo "if pidof kismet > /dev/null" >> /home/apagar/.bashrc
 echo "then" >> /home/apagar/.bashrc
 echo "    sudo pkill kismet" >> /home/apagar/.bashrc
@@ -183,12 +177,12 @@ echo "sudo shutdown now" >> /home/apagar/.bashrc
 
 echo ""
 
-echo "-----------------------------------------------------------------"
-echo "Instalando el menú para gestionar el ToolSet Wardriving Scout ..."
-echo "-----------------------------------------------------------------"
-# Copiar el script que administra el menú del TSS
-cp menu_tss.sh /home/tss/menu_tss.sh
-chmod ugo+x /home/tss/menu_tss.sh
+echo "-------------------------------------------------------------------"
+echo "Instalando el menú para gestionar el ToolSet Wardriving Tracker ..."
+echo "-------------------------------------------------------------------"
+# Copiar el script que administra el menú del TST
+cp menu_tst.sh /home/tst/menu_tst.sh
+chmod ugo+x /home/tst/menu_tst.sh
 apt install -y dialog
 
 echo ""
@@ -201,12 +195,12 @@ touch /etc/rc.local
 echo "#!/bin/bash" >> /etc/rc.local
 echo "# rc.local" >> /etc/rc.local
 echo "echo \"\$(date +'%d-%m-%Y_%H-%M-%S') - Arrancando rc.local ...\" >> /var/log/rc.local.log" >> /etc/rc.local
-echo "bash /home/tss/config_wifi_tss.sh" >> /etc/rc.local
+echo "bash /home/tst/config_wifi_tst.sh" >> /etc/rc.local
 echo "kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\"" >> /etc/rc.local
 echo "exit 0" >> /etc/rc.local
 chmod ugo+x /etc/rc.local
-cp config_wifi_tss.sh /home/tss/config_wifi_tss.sh
-chmod ugo+x /home/tss/config_wifi_tss.sh
+cp config_wifi_tst.sh /home/tst/config_wifi_tst.sh
+chmod ugo+x /home/tst/config_wifi_tst.sh
 # Crear el archivo de unidad para el servicio rc.local
 touch /etc/systemd/system/rc-local.service
 echo "[Unit]" >> /etc/systemd/system/rc-local.service
