@@ -94,7 +94,7 @@ view_file_capture() {
     if [ -f "$PIDFILE" ] && ps -p $(cat "$PIDFILE") > /dev/null; then
         LINE=$(ps aux | grep '[k]ismet' | head -n 1)
         TARGET=$(echo "$LINE" | sed -n 's/.*-t \([^ ]*\).*/\1/p')
-        FILE_NAME_CAP="/home/lasi/kismet/${TARGET}.kismet"
+        FILE_NAME_CAP="/home/tsh/kismet/${TARGET}.kismet"
         SIZE_FILE_CAP=$(stat -c %s "$FILE_NAME_CAP")
         dialog --msgbox "Nombre: $FILE_NAME_CAP\nTamaño: $SIZE_FILE_CAP bytes" 7 70
     else
@@ -115,9 +115,9 @@ gps_check_status() {
     DATA=$(timeout "$TIMEOUT" cat "$DEVICE" 2>/dev/null | grep -m 1 '^\$GP')
 
     if [ -n "$DATA" ]; then
-        echo "GPSd Ok"
+        echo "GPS Ok"
     else
-        echo "No GPSd"
+        echo "No GPS"
     fi
 }
 

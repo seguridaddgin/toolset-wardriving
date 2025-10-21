@@ -72,7 +72,7 @@ apt-get install -y kismet
 touch /etc/kismet/kismet_site.conf
 echo "gps=gpsd:host=localhost,port=2947" >> /etc/kismet/kismet_site.conf
 echo "source=wifi24:channels=\"1,2,3,4,5,6,7,8,9,10,11,12,13\",name=wifi24,type=linuxwifi" >> /etc/kismet/kismet_site.conf
-echo "source=wifi58:channels=\"36,48\",name=wifi58,type=linuxwifi" >> /etc/kismet/kismet_site.conf
+echo "source=wifi58:channels=\"36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,144,149,153,157,161,165\",name=wifi58,type=linuxwifi" >> /etc/kismet/kismet_site.conf
 sed -i 's|^[[:space:]]*log_prefix=\./|log_prefix=/home/tst/kismet|' /etc/kismet/kismet_logging.conf
 sed -i 's|log_template=%p/%n-%D-%t-%i\.%l|log_template=%p/%n\.%l|' /etc/kismet/kismet_logging.conf
 mkdir /home/tst/kismet
@@ -199,11 +199,11 @@ echo "Creando el servicio rc.local para automatizar el inicio de Kismet en el ar
 echo "------------------------------------------------------------------------------------------------"
 # Crear el servicio rc.local para automatizar el inicio de kismet en el sistema
 touch /etc/rc.local
-echo "#!/bin/bash" >> /etc/rc.local
+echo "#!/bin/sh -e" >> /etc/rc.local
 echo "# rc.local" >> /etc/rc.local
 echo "echo \"\$(date +'%d-%m-%Y_%H-%M-%S') - Arrancando rc.local ...\" >> /var/log/rc.local.log" >> /etc/rc.local
 echo "bash /home/tst/config_wifi_tst.sh" >> /etc/rc.local
-echo "kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\"" >> /etc/rc.local
+echo "kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /etc/rc.local
 echo "exit 0" >> /etc/rc.local
 chmod ugo+x /etc/rc.local
 cp config_wifi_tst.sh /home/tst/config_wifi_tst.sh

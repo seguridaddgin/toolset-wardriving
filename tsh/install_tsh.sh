@@ -1,7 +1,7 @@
 #!/bin/bash
-echo "-------------------------------------------------------------"
-echo "Instalando el ToolSet Wardriving Scout en Raspberry Pi OS ..."
-echo "-------------------------------------------------------------"
+echo "---------------------------------------------------------------"
+echo "Instalando el ToolSet Wardriving Hunter en Raspberry Pi OS ..."
+echo "---------------------------------------------------------------"
 
 echo ""
 
@@ -16,16 +16,16 @@ echo "Ubicación del archivo de clave: /root/users_passwords.txt"
 
 echo ""
 
-echo "----------------------------------------------------------------------"
-echo "Agregando usuario tss para la gestión del ToolSet Wardriving Scout ..."
-echo "----------------------------------------------------------------------"
-# Agregar un usuario de nombre tss para iniciar la gestión del TSS
-useradd -m -s /bin/bash tss
-usermod --password $(openssl passwd -1 "$PASSWORD") tss
-# Agregar el usuario tss al grupo sudo y adm
-usermod -aG sudo tss
-usermod -aG adm tss
-echo "sudo bash menu_tss.sh" >> /home/tss/.bashrc
+echo "-----------------------------------------------------------------------"
+echo "Agregando usuario tsh para la gestión del ToolSet Wardriving Hunter ..."
+echo "-----------------------------------------------------------------------"
+# Agregar un usuario de nombre tsh para iniciar la gestión del TSH
+useradd -m -s /bin/bash tsh
+usermod --password $(openssl passwd -1 "$PASSWORD") tsh
+# Agregar el usuario tsh al grupo sudo y adm
+usermod -aG sudo tsh
+usermod -aG adm tsh
+echo "sudo bash menu_tsh.sh" >> /home/tsh/.bashrc
 
 echo ""
 
@@ -41,24 +41,6 @@ apt upgrade -y
 
 echo ""
 
-echo "----------------------------------"
-echo "Instalando y configurando gpsd ..."
-echo "----------------------------------"
-# Instalación y configuración de gpsd
-apt-get remove gpsd
-apt-get purge gpsd
-apt-get install -y gpsd
-apt-get install -y gpsd-clients
-systemctl stop gpsd
-systemctl stop gpsd.socket
-systemctl start gpsd.socket
-systemctl enable gpsd.socket
-echo "OPTIONS=\"udp://*:9999\"" >> /etc/default/gpsd
-sed -i 's/^USBAUTO=".*"/USBAUTO="false"/' /etc/default/gpsd
-systemctl restart gpsd.socket
-
-echo ""
-
 echo "------------------------------------"
 echo "Instalando y configurando Kismet ..."
 echo "------------------------------------"
@@ -70,12 +52,13 @@ echo 'deb [signed-by=/usr/share/keyrings/kismet-archive-keyring.gpg] https://www
 apt-get update
 apt-get install -y kismet
 touch /etc/kismet/kismet_site.conf
-echo "gps=gpsd:host=localhost,port=2947" >> /etc/kismet/kismet_site.conf
+echo "gps=serial:device=/dev/ttyACM0,name=ttyACM0,reconnect=true,baud=4800" >> /etc/kismet/kismet_site.conf
 echo "source=wifi24:channels=\"1,2,3,4,5,6,7,8,9,10,11,12,13\",name=wifi24,type=linuxwifi" >> /etc/kismet/kismet_site.conf
-sed -i 's|^[[:space:]]*log_prefix=\./|log_prefix=/home/tss/kismet|' /etc/kismet/kismet_logging.conf
+echo "source=wifi58:channels=\"36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,144,149,153,157,161,165\",name=wifi58,type=linuxwifi" >> /etc/kismet/kismet_site.conf
+sed -i 's|^[[:space:]]*log_prefix=\./|log_prefix=/home/tsh/kismet|' /etc/kismet/kismet_logging.conf
 sed -i 's|log_template=%p/%n-%D-%t-%i\.%l|log_template=%p/%n\.%l|' /etc/kismet/kismet_logging.conf
-mkdir /home/tss/kismet
-chown -R tss:tss /home/tss/kismet
+mkdir /home/tsh/kismet
+chown -R tsh:tsh /home/tsh/kismet
 
 echo ""
 
@@ -116,17 +99,17 @@ usermod -aG sudo reiniciar
 usermod -aG adm reiniciar
 echo "echo \"Reiniciando kismet ...\"" >> /home/reiniciar/.bashrc
 echo "sudo pkill kismet" >> /home/reiniciar/.bashrc
-echo "sudo systemctl stop gpsd.socket" >> /home/reiniciar/.bashrc
+echo "sudo pkill -f WifiUserPassWPSDefault" >> /home/reiniciar/.bashrc
 echo "sleep 10" >> /home/reiniciar/.bashrc
-echo "sudo systemctl start gpsd.socket" >> /home/reiniciar/.bashrc
+echo "sudo bash /home/tsh/WifiUserPassWPSDefault.sh wificonnect | tee -a /home/tsh/WifiUserPassWPSDefault.log" >> /home/reiniciar/.bashrc
 echo "sudo kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /home/reiniciar/.bashrc
 
 echo ""
 
-echo "-----------------------------------------------------------------------"
-echo "Agregando usuario estado para visualizar el estado de Kismet y gpsd ..."
-echo "-----------------------------------------------------------------------"
-# Agregar un usuario de nombre estado para visualizar el estado de kismet y gpsd
+echo "-------------------------------------------------------------------------"
+echo "Agregando usuario estado para visualizar el estado de Kismet y el gps ..."
+echo "-------------------------------------------------------------------------"
+# Agregar un usuario de nombre estado para visualizar el estado de kismet y el gps
 useradd -m -s /bin/bash estado
 usermod --password $(openssl passwd -1 "$PASSWORD") estado
 # Agregar el usuario estado al grupo sudo y adm
@@ -139,11 +122,11 @@ echo "else" >> /home/estado/.bashrc
 echo "    echo \"Kismet no se encuentra en ejecución\"" >> /home/estado/.bashrc
 echo "fi" >> /home/estado/.bashrc
 echo "" >> /home/estado/.bashrc
-echo "if pidof gpsd > /dev/null" >> /home/estado/.bashrc
-echo "then" >> /home/estado/.bashrc
-echo "    echo \"gpsd está en ejecución\"" >> /home/estado/.bashrc
+echo "DATA=\$(timeout 3 cat /dev/ttyACM0 2>/dev/null | grep -m 1 '^\\$GP')" >> /home/estado/.bashrc
+echo "if [ -n \"$DATA\" ]; then" >> /home/estado/.bashrc
+echo "    echo \"El gps está en ejecución\"" >> /home/estado/.bashrc
 echo "else" >> /home/estado/.bashrc
-echo "    echo \"gpsd no se encuentra en ejecución\"" >> /home/estado/.bashrc
+echo "    echo \"El gps no se encuentra en ejecución\"" >> /home/estado/.bashrc
 echo "fi" >> /home/estado/.bashrc
 echo "" >> /home/estado/.bashrc
 
@@ -183,12 +166,12 @@ echo "sudo shutdown now" >> /home/apagar/.bashrc
 
 echo ""
 
-echo "-----------------------------------------------------------------"
-echo "Instalando el menú para gestionar el ToolSet Wardriving Scout ..."
-echo "-----------------------------------------------------------------"
-# Copiar el script que administra el menú del TSS
-cp menu_tss.sh /home/tss/menu_tss.sh
-chmod ugo+x /home/tss/menu_tss.sh
+echo "------------------------------------------------------------------"
+echo "Instalando el menú para gestionar el ToolSet Wardriving Hunter ..."
+echo "------------------------------------------------------------------"
+# Copiar el script que administra el menú del TSH
+cp menu_tsh.sh /home/tsh/menu_tsh.sh
+chmod ugo+x /home/tsh/menu_tsh.sh
 apt install -y dialog
 
 echo ""
@@ -201,12 +184,16 @@ touch /etc/rc.local
 echo "#!/bin/sh -e" >> /etc/rc.local
 echo "# rc.local" >> /etc/rc.local
 echo "echo \"\$(date +'%d-%m-%Y_%H-%M-%S') - Arrancando rc.local ...\" >> /var/log/rc.local.log" >> /etc/rc.local
-echo "bash /home/tss/config_wifi_tss.sh" >> /etc/rc.local
+echo "bash /home/tsh/config_wifi_tsh.sh" >> /etc/rc.local
 echo "kismet --log-debug 2>&1 -t \"Kismet_\$(date +'%d-%m-%Y_%H-%M-%S')\" &" >> /etc/rc.local
+echo "bash /home/tsh/WifiUserPassWPSDefault.sh wificonnect | tee -a /home/tsh/WifiUserPassWPSDefault.log" >> /etc/rc.local
 echo "exit 0" >> /etc/rc.local
 chmod ugo+x /etc/rc.local
-cp config_wifi_tss.sh /home/tss/config_wifi_tss.sh
-chmod ugo+x /home/tss/config_wifi_tss.sh
+cp config_wifi_tsh.sh /home/tsh/config_wifi_tsh.sh
+chmod ugo+x /home/tsh/config_wifi_tsh.sh
+cp WifiUserPassWPSDefault.sh /home/tsh/WifiUserPassWPSDefault.sh
+chmod ugo+x /home/tsh/WifiUserPassWPSDefault.sh
+apt install -y bully
 # Crear el archivo de unidad para el servicio rc.local
 touch /etc/systemd/system/rc-local.service
 echo "[Unit]" >> /etc/systemd/system/rc-local.service
