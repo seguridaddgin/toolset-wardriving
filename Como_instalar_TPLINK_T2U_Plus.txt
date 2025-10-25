@@ -1,0 +1,63 @@
+==================================================================================
+Como instalar y configurar una placa Wi-Fi USB TP-Link T2U Plus en Raspberry Pi OS
+==================================================================================
+
+Este documento describe la instalación y configuración de una placa Wi-Fi USB marca TP-Link modelo T2U Plus en el sistema operativo Raspbeery Pi OS, es una placa Wi-Fi USB que trabaja en las bandas 2,4 MHz y 5,8 MHz que contiene en su interior un chipset Realtek 8821AU, se han probado varios controladores para la placa T2U Plus, pero a continuación se muestran las instalaciones que mejores resultados dieron respecto del funcionamiento en la técnica de Wardriving.
+
+El primer controlador, se puede descargar de la siguiente URL: https://github.com/aircrack-ng/rtl8812au/. Dentro del documento README.md se pueden encontrar los pasos para instalar el controlador una Raspberry Pi, igualmente, a continucación se dejan los pasos elementales para instalar el controlador utilizando Dynamic Kernel Module Support (DKMS):
+
+Primer paso
+-----------
+Instalar el paquete dkms con el siguiente comando:
+$ sudo apt install dkms
+
+Segundo paso
+------------
+Descargar el controlador utilizando la herramienta git:
+$ sudo git clone -b v5.6.4.2 https://github.com/aircrack-ng/rtl8812au.git
+
+Tercer paso
+-----------
+Ingresar al directorio del controlador descargado en el paso anterior:
+$ cd rtl*
+
+Cuarto paso
+-----------
+Finalmente instalamos el controlador con el siguiente comando:
+$ sudo make dkms_install
+
+El segundo controlador, más actualizado y recomendado, se puede descargar de la siguiente URL: https://github.com/lwfinger/rtw88. Aquí también dentro del archivo README.md se pueden encontrar las instrucciones para instalar el controlador en una Raspberry PI, de todas formas, a continuación dejamos los pasos elementales para instalar el controlador:
+
+Primer paso
+-----------
+Instalamos los paquetes requeridos y necesarios para realizar la instalación del controlador:
+$ sudo apt install -y raspberrypi-kernel-headers build-essential git dkms
+
+Segundo paso
+------------
+Clonar el repositorio de código fuente del controlador utilizando el siguiente comando:
+# sudo git clone https://github.com/lwfinger/rtw88
+
+Tercer paso
+-----------
+Cambiar el directorio al que contiene el código fuente del controlador:
+$ cd rtw88
+
+Cuarto paso
+-----------
+Construir el driver rtw88 con el siguiente comando:
+$ sudo dkms install $PWD
+
+Quinto paso
+-----------
+Instalar el firmware en el sistema operativo Raspberry Pi OS con el siguiente comando:
+$ sudo make install_fw
+
+Sexto paso
+----------
+Copiar el archivo de configuración del controlador:
+$ cp rtw88.conf /etc/modprobe.d/
+
+Por último, y para cualquiera de los controladores utilizados, se recomienda reiniciar para comenzar a utilizar la placa Wi-Fi USB TPLINK T2U Plus.
+
+
