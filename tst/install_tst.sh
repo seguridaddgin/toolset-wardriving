@@ -230,6 +230,24 @@ timeout 5 systemctl start rc-local
 
 echo ""
 
+echo "----------------------------------------------------------------------------------------------------"
+echo "Ajustando el servicio ssh para tener una mejor seguridad en el acceso al sistema de forma remota ..."
+echo "----------------------------------------------------------------------------------------------------"
+# Modificar la configuración del servicio ssh para endurecer la seguridad del servicio
+
+# Agregar una línea de configuración para No permitir login directo de root
+sed -i 's/^#PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+# Agregar una linea de configuración para aplicar una conexión rápida
+sed -i 's/^[#]*LoginGraceTime.*/LoginGraceTime 30/' /etc/ssh/sshd_config
+# Agregar una línea de configuración para aplicar un límite en cantidad de intentos
+sed -i 's/^[#]*MaxAuthTries.*/MaxAuthTries 3/' /etc/ssh/sshd_config
+# Agregar líneas de configuración para desactivar reenvíos innecesarios
+sed -i 's/^[#]*X11Forwarding.*/X11Forwarding no/' /etc/ssh/sshd_config
+sed -i 's/^[#]*PermitTunnel.*/PermitTunnel no/' /etc/ssh/sshd_config
+sed -i 's/^[#]*AllowTcpForwarding.*/AllowTcpForwarding no/' /etc/ssh/sshd_config
+
+echo ""
+
 echo "-------------------------------------------------"
 echo "Instalación completada!. Se reiniciará el sistema"
 echo "-------------------------------------------------"
