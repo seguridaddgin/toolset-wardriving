@@ -1,0 +1,11 @@
+Marcas y modelos recomendados para la técnica de Wardriving
+-----------------------------------------------------------
+
+Banda 2.4 GHz
+TPLINK TL-WN722n Versión 1.0 chipset Atheros Communications AR9271
+TPLINK TL-WN422g chipset Atheros Communications
+TPLINK TL-WN7200ND Versión 1.0 chipset Ralink RT2870/RT3070
+OEM chipset Ralink RT5370
+
+Banda 2.4 GHz y 5.8 GHz
+TPLINK T2U Plus chipset Realtek RTL8821AU (se debe complicar el controlador)
